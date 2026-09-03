@@ -1,219 +1,108 @@
 <style scoped>
-.Cotizacion {
-    display: flex;
-    flex-direction: column;
-    height: 35%;
-    width: 98%;
-    background: radial-gradient(
-        ellipse at center,
-        #F0F0F0 0%,
-        #BCBCBC 100%
-    );
-    border: 3px solid #FB1C2E;
-    border-radius: 22px;
-}
-
-.CotizTitulo {
-    position: absolute;
+.CotizEditsPrinc {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 22%;
-    width: 5%;
+    width: 98%;
+    height: auto;
     background: radial-gradient(
-        ellipse at top,
-        #F0F0F0 0%,
+        #F0F0F0 10%,
         #BCBCBC 100%
     );
-    border: 1.5px solid #FB1C2E;
+    border: solid 2px #FB1C2E;
     border-radius: 22px;
-    margin-left: 1.6%;
-    margin-top: 1.7%;
+    overflow: hidden;
 }
 
-.CotizTitulo span {
-    position: relative;
-    font-size: 1.7rem;
-    font-weight: bold;
-    color:#130348;
-    display: inline-block;
-    transform: rotate(270deg);
-    white-space:  nowrap;
-}
-
-.CotizComponents {
+.HeaderCotiz {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: right;
+    padding: 5px 16px;
     width: 100%;
-    height: 30%;
     background: radial-gradient(
         ellipse at center,
-        #130348 50%,
+        #130348 10%,
         #07072C 100%
     );
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    gap: .5%;
+    border-bottom: 1.5px solid #FB1C2E;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
-.VentaColumn {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 10%;
-    align-items: center;
-    justify-content: center;
-    gap: .5%;
+.HeaderCotiz span {
+    font-size: 1.3rem;
+    font-weight: 550;
+    color: white;
+}
+
+.pacienteDropdownWrap {
     position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
 }
 
-.Venta-dropdown {
+.HeaderCotiz .material-icons.arrow-paciente {
+    cursor: pointer;
+}
+
+.HeaderCotiz .material-icons.arrow-paciente.disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.dropdownPacientes {
     position: absolute;
-    top: 100%;
+    top: 130%;
     left: 0;
-    width: 100%;
-    background: radial-gradient(
-        ellipse at bottom,
-        #F0F0F0 0%,
-        #BCBCBC 100%
-    );
-    border: 2px solid #130348;
-    border-radius: 8px;
+    width: max-content;
+    min-width: 220px;
+    background: white;
+    border: 2px solid #FB1C2E;
+    border-radius: 15px;
     z-index: 100;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.Venta-dropdown-item {
-    padding: 11px 12px;
-    font-size: 0.95rem;
-    color: #130348;
-    font-weight: 600;
+.itemPaciente {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
     cursor: pointer;
+    gap: 10px;
     transition: background 0.15s;
-    background: radial-gradient(
-        ellipse at bottom,
-        #F0F0F0 0%,
-        #BCBCBC 100%
-    );
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.Venta-dropdown-item:hover {
-    background: #F0F0F0;
+.itemPaciente:last-child {
+    border-bottom: none;
 }
 
-.VentaRow {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
+.itemPaciente:hover {
+    background-color: #f5f5f5;
+}
+
+.nombrePaciente {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #130348;
+}
+
+.sinPacientes, .loadingPacientes {
+    padding: 14px 18px;
+    color: #888;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+table {
     width: 100%;
-    cursor: pointer;
-}
-
-.VentaRow text {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color:white;
-}
-
-.LentRow {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    height: 25%;
-    width: 100%;
-    cursor: pointer;
-    padding-left: 10%;
-    padding-right: 10%;
-}
-
-.LentRow text {
-    font-size: .9rem;
-    font-weight: bold;
-    color:white;
-}
-
-.EddResults {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
-
-.EddResults text {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color:white;
-}
-
-.IconSpace {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 90%;
-    width: 6%;
-    border-radius: 10px;
-    background: radial-gradient(
-        ellipse at center,
-        #F0F0F0 50%,
-        #BCBCBC 100%
-    );
-}
-
-.Edits {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 90%;
-    width: 25%;
-}
-
-.StatsDiv {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 13%;
-    background: radial-gradient(
-        ellipse at bottom, 
-        #130348 100%,
-        #07072C 50%
-    );
-    border-top-right-radius: 20px;
-    position: relative;  /* ← needed for ::before */
-}
-
-.StatsDiv::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 10px;        /* ← same as your border-left width */
-    height: 100%;
-    background: radial-gradient(
-        ellipse at bottom,
-        #F0F0F0 20%,
-        #BCBCBC 80%
-    );
-}
-
-.RowInf {
-    display: flex;
-    flex-direction: row;
-    height: 70%;
-    width: 100%;
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-    padding-left: 8%;
+    border-collapse: collapse;
+    table-layout: fixed;
 }
 
 thead tr {
@@ -221,223 +110,318 @@ thead tr {
 }
 
 thead th {
-    padding: 9px 72px;
-    text-align: left;
+    padding: 9px;
+    text-align: center;
     font-size: 1rem;
     font-weight: 700;
     color: #130348;
+    line-height: 1.2;
+    word-break: break-word;
+    white-space: normal;
+    border-bottom: 1px solid #130348;
+}
+
+tbody tr {
+    border-bottom: 1px solid #F0F0F0;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+
+.TablaProductos tbody tr:first-child td {text-align: left;}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background-color: #FAFAFA; }
+
+tbody td {
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: 550;
+    color: #130348;
     white-space: nowrap;
-    border-bottom: 1px solid #BCBCBC;
+    border: 1px solid #130348;
+    text-align: center;
 }
 
-.Costos {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    padding: 1.5%;
-    border-left: 10px solid #130348;
-    background: radial-gradient(
-        ellipse at top,
-        #F0F0F0 20%,
-        #BCBCBC 80%
-    );
-    border-bottom-right-radius: 20px;
+.TablaProductos tbody td:nth-child(2) {
+    text-align: left;
 }
 
-.CostRow {
+.Eliminar {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     align-items: center;
-    height: 25%;
+    justify-content: space-around;
+    background: #FB1C2E;
+    border: 1px solid white;
+    border-radius: 15px;
+    padding: 3px 5px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
 }
 
-.CostRow text {
-    font-size: 1.3rem;
-    font-weight: bold;
+.Eliminar:hover {
+    background: radial-gradient(
+        #F0F0F0 10%,
+        #BCBCBC 100%
+    );
+    border: 1px solid #FB1C2E;
+    color: #FB1C2E;
+}
+
+.accept {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    background: radial-gradient(
+        ellipse at center,
+        #130348 10%,
+        #07072C 100%
+    );
+    border: 1px solid white;
+    border-radius: 15px;
+    padding: 3px 7px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.accept:hover {
+    background: radial-gradient(
+        #F0F0F0 10%,
+        #BCBCBC 100%
+    );
+    border: 1px solid #130348;
+    color: #130348;
+}
+
+.Cobr {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    background: radial-gradient(
+        ellipse at center,
+        #58B358 10%,
+        #2E8B57 100%
+    );
+    border: 1px solid white;
+    border-radius: 15px;
+    padding: 1px 5px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.Cobr:hover {
+    background: radial-gradient(
+        #F0F0F0 10%,
+        #BCBCBC 100%
+    );
+    border: 1px solid #58B358;
+    color: #58B358;
+}
+
+.CliBarEdInv {
+    width: 100%;
+    padding: 3px 5px 3px 5px;
+    border: 2px solid #FB1C2E;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: radial-gradient(
+        ellipse at bottom,
+        #F0F0F0 50%,
+        #BCBCBC 150%
+    );
     color: #130348;
 }
 </style>
 
 <template>
-    <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    </head>
-    <div class="Cotizacion">
-        <div class="CotizTitulo">
-            <span>Cotizacion 1</span>
-        </div>
-        <div class="CotizComponents">
-            <div class="VentaColumn">
-                <div class="VentaRow" @click="toggleDropdown">
-                    <text>Tipo de Venta</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">
-                        {{ showDropdown ? 'arrow_drop_up' : 'arrow_drop_down' }}
-                    </span>
-                </div>
-                <div class="EddResults">
-                    <text>{{ selectedVenta?.venta ?? '—' }}</text>
-                </div>
-                <div v-if="showDropdown" class="Venta-dropdown">
-                    <div v-if="loadingVentas" class="Venta-dropdown-item">Cargando...</div>
+    <div class="CotizEditsPrinc">
+        <div class="HeaderCotiz">
+            <span>Cotizacion: </span>
+            <span>{{ nombreCliente }}</span>
+            <div class="pacienteDropdownWrap">
+                <span
+                    class="material-icons arrow-paciente"
+                    :class="{ disabled: !cotizacionStore.clienteSeleccionado }"
+                    @click="toggleDropdownPacientes"
+                >arrow_right</span>
+                <span>{{ nombrePaciente }}</span>
+                <div class="dropdownPacientes" v-if="mostrarDropdownPacientes">
+                    <div v-if="isLoadingPacientes" class="loadingPacientes">Cargando...</div>
+                    <div v-else-if="pacientes.length === 0" class="sinPacientes">
+                        No hay pacientes registrados
+                    </div>
                     <div
                         v-else
-                        v-for="venta in tiposVenta"
-                        :key="venta.id"
-                        class="Venta-dropdown-item"
-                        @click="selectVenta(venta)"
+                        v-for="paciente in pacientes"
+                        :key="paciente.id"
+                        class="itemPaciente"
+                        @click="seleccionarPaciente(paciente)"
                     >
-                        {{ venta.venta }}
+                        <span class="material-icons" style="color: #130348;">person</span>
+                        <span class="nombrePaciente" style="color: #130348;">{{ paciente.nombres }} {{ paciente.apellidos }}</span>
                     </div>
                 </div>
             </div>
-            <div class="IconSpace">
-                <span class="material-symbols-outlined" style="color:#130348; font-size:45px;">eyeglasses_2</span>
-            </div>
-            <div class="Edits">
-                <div class="VentaRow">
-                    <text>Tipo</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-                <div class="VentaRow">
-                    <text> Marca</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-                <div class="VentaRow">
-                    <text>Modelo</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-            </div>
-            <div class="IconSpace">
-                <span class="material-symbols-outlined" style="color:#130348; font-size:45px;">mystery</span>
-            </div>
-            <div class="Edits">
-                <div class="LentRow">
-                    <text>Tipo</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-                <div class="LentRow">
-                    <text> Material</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-                <div class="LentRow">
-                    <text>Color</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-                <div class="LentRow">
-                    <text>Rango</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                    <text></text>
-                </div>
-            </div>
-            <div class="StatsDiv">
-                <div class="VentaRow">
-                    <text>STATUS</text>
-                    <span class="material-icons" style="color:white; font-size:25px;">arrow_drop_down</span>
-                </div>
-                <div class="EddResults">
-                    <text>Cotizacion</text>
-                </div>
-            </div>
         </div>
-        <div class="RowInf">
-            <div class="TableInf">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>CODIGO</th>
-                            <th>DESCRIPCION</th>
-                            <th>PRECIO</th>
-                            <th>DESCUENTO</th>
-                            <th>P.NETO</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-            <div class="Costos">
-                <div class="CostRow">
-                    <text>
-                        Precio
-                    </text>
-                    <text>
-                        $6,590
-                    </text>
-                </div>
-                <div class="CostRow">
-                    <text>
-                        Descuento
-                    </text>
-                    <text>
-                        $600
-                    </text>
-                </div>
-                <div class="CostRow">
-                    <text>
-                        Neto
-                    </text>
-                    <text>
-                        $5,990
-                    </text>
-                </div>
-                <div class="CostRow">
-                    <text>
-                        DLLS
-                    </text>
-                    <text>
-                        $310
-                    </text>
-                </div>
-            </div>
-        </div>
+        <table class="TablaProductos">
+            <colgroup>
+                <col style="width: 73.5%;">
+                <col style="width: 7%;">
+                <col style="width: 4%;">
+                <col style="width: 8%;">
+                <col style="width: 7.5%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Precio Venta</th>
+                    <th>Piezas</th>
+                    <th>Total Producto</th>
+                    <th>Opciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>OFTALMICO N/A CRISTAL MONOFOCAL FOTOCROMATICO METALICOS</td>
+                    <td>$100.00</td>
+                    <td>1</td>
+                    <td>$200.00</td>
+                    <td>
+                        <button class="Eliminar">
+                            <span class="material-icons">close</span>
+                            <span>Eliminar</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <colgroup>
+                <col style="width: 78%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 6%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Total Normal</th>
+                    <th>Total Venta</th>
+                    <th>Opciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td>$100.00</td>
+                    <td>$200.00</td>
+                    <td>
+                        <button class="accept">
+                            <span>Aceptar</span>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <colgroup>
+                <col style="width: 76%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+                <col style="width: 8%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td>Ahorro:</td>
+                    <td>
+                        <input
+                            type="double"
+                            placeholder="0"
+                            class="CliBarEdInv"
+                            v-model="nombreQuery"
+                            autocomplete="off"
+                            @keyup.enter="buscarProducto"
+                        />
+                    </td>
+                    <td>
+                        <button class="Cobr">
+                            <span class="material-icons">attach_money</span>
+                            <span>Cobrar</span>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useCotizacionStore } from '../../../stores/cotizacion'
+import { authHeaders } from '../../../services/authHeader'
 
-// ── Tipo de Venta ──────────────────────────────────────
-const tiposVenta    = ref([])
-const selectedVenta = ref(null)
-const showDropdown  = ref(false)
-const loadingVentas = ref(false)
+const cotizacionStore = useCotizacionStore()
 
-onMounted(async () => {
-    loadingVentas.value = true
+const pacientes = ref([])
+const isLoadingPacientes = ref(false)
+const mostrarDropdownPacientes = ref(false)
+
+const nombreCliente = computed(() => {
+    const cliente = cotizacionStore.clienteSeleccionado
+    if (!cliente) return ''
+    return `${cliente.nombres} ${cliente.apellidos}`
+})
+
+const nombrePaciente = computed(() => {
+    const paciente = cotizacionStore.pacienteSeleccionado
+    if (!paciente) return ''
+    return `${paciente.nombres} ${paciente.apellidos}`
+})
+
+const cargarPacientes = async (clienteId) => {
+    isLoadingPacientes.value = true
     try {
-        const res = await fetch('http://127.0.0.1:8000/tipo_venta/all')
-        tiposVenta.value = await res.json()
-    } catch (e) {
-        console.error('Error cargando tipos de venta:', e)
+        const response = await fetch(`http://127.0.0.1:8000/pacientes/cliente/${clienteId}`, { headers: authHeaders() })
+        pacientes.value = await response.json()
+    } catch (error) {
+        console.error('Error al cargar pacientes:', error)
+        pacientes.value = []
     } finally {
-        loadingVentas.value = false
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', handleOutsideClick)
-})
-
-onBeforeUnmount(() => {
-    document.removeEventListener('click', handleOutsideClick)
-})
-
-const toggleDropdown = () => {
-    showDropdown.value = !showDropdown.value
-}
-
-const selectVenta = (venta) => {
-    selectedVenta.value = venta
-    showDropdown.value = false
-}
-
-const handleOutsideClick = (e) => {
-    if (!e.target.closest('.VentaColumn')) {
-        showDropdown.value = false
+        isLoadingPacientes.value = false
     }
 }
+
+const toggleDropdownPacientes = () => {
+    if (!cotizacionStore.clienteSeleccionado) return
+
+    mostrarDropdownPacientes.value = !mostrarDropdownPacientes.value
+    if (mostrarDropdownPacientes.value) {
+        cargarPacientes(cotizacionStore.clienteSeleccionado.id)
+    }
+}
+
+const seleccionarPaciente = (paciente) => {
+    cotizacionStore.setPaciente(paciente)
+    mostrarDropdownPacientes.value = false
+}
+
+// El store limpia el paciente al cambiar/quitar cliente; aquí solo cerramos el dropdown y refrescamos la lista cacheada
+watch(() => cotizacionStore.clienteSeleccionado, () => {
+    mostrarDropdownPacientes.value = false
+    pacientes.value = []
+})
 </script>

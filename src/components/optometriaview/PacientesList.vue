@@ -415,6 +415,7 @@
 
 <script setup>
 import { ref, reactive, watch } from 'vue'
+import { authHeaders } from '../../services/authHeader'
 
 const props = defineProps({
     pacientes:            { type: Array,  default: () => [] },
@@ -473,7 +474,7 @@ const crearPaciente = async () => {
     try {
         const response = await fetch('http://127.0.0.1:8000/pacientes/create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ ...newPaciente, clienteid: props.clienteId })
         })
 

@@ -49,6 +49,22 @@
     color: #130348;
 }
 
+.CliBarEdi2 {
+    width: 100%;
+    padding: 5px 1rem;
+    border: 2px solid #FB1C2E;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: radial-gradient(
+        ellipse at bottom,
+        #F0F0F0 50%,
+        #BCBCBC 150%
+    );
+    color: #130348;
+    cursor: not-allowed;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -91,6 +107,28 @@ tbody td {
 
 tbody td:nth-child(2) {
     text-align: left;
+}
+
+.producto-cell {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+}
+
+.producto-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.producto-text.is-scrolling {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .CodeBox {
@@ -145,57 +183,75 @@ tbody td:nth-child(2) {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Smart Torres Del Sur</td>
+                <tr v-if="isLoading">
+                    <td colspan="9">Cargando inventario...</td>
+                </tr>
+                <tr v-else-if="errorMessage">
+                    <td colspan="9">{{ errorMessage }}</td>
+                </tr>
+                <tr v-else>
+                    <td>{{ sucursalNombre }}</td>
                     <td>
                         <div class="CodeBox">
-                            <text>0500000225700000000</text>
+                            <text>{{ producto?.codigo || '---' }}</text>
                         </div>
                     </td>
-                    <td>AIR OPTIX COLORS GRA~+--0.50 A -6.00</td>
+                    <td>
+                        <div
+                            class="producto-cell"
+                            @mouseenter="onProductoHover"
+                            @mouseleave="onProductoLeave"
+                        >
+                            <span class="producto-text">{{ producto?.nombre || '---' }}</span>
+                        </div>
+                    </td>
                     <td>
                         <input
-                            type=double
+                            type="number"
                             placeholder=""
                             class="CliBarEdi"
-                            v-model="searchQuery"
+                            v-model="puntoReorden"
                             autocomplete="off"
                         />
                     </td>
                     <td>
                         <input
-                            type=double
+                            type="number"
                             placeholder=""
-                            class="CliBarEdi"
-                            v-model="searchQuery"
+                            class="CliBarEdi2"
+                            v-model="existenciaActual"
                             autocomplete="off"
+                            disabled
                         />
                     </td>
                     <td>
                         <input
-                            type=double
+                            type="number"
                             placeholder=""
                             class="CliBarEdi"
-                            v-model="searchQuery"
+                            v-model="entrada"
                             autocomplete="off"
+                            @input="calcularExistenciaFinal"
                         />
                     </td>
                     <td>
                         <input
-                            type=double
+                            type="number"
                             placeholder=""
                             class="CliBarEdi"
-                            v-model="searchQuery"
+                            v-model="merma"
                             autocomplete="off"
+                            @input="calcularExistenciaFinal"
                         />
                     </td>
                     <td>
                         <input
-                            type=double
+                            type="number"
                             placeholder=""
-                            class="CliBarEdi"
-                            v-model="searchQuery"
+                            class="CliBarEdi2"
+                            v-model="existenciaFinal"
                             autocomplete="off"
+                            disabled
                         />
                     </td>
                     <td>
@@ -208,5 +264,99 @@ tbody td:nth-child(2) {
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
+import { ProductosService } from '../../../../services/ProductosServices'
+import { getInventarioSucursalProducto } from '../../../../services/InventarioServices'
+import { getSucursales } from '../../../../services/SucursalesServices'
+import { useInventarioEdicionStore } from '../../../../stores/inventarioEdicion'
 
+const inventarioStore = useInventarioEdicionStore()
+
+const producto = ref(null)
+const sucursalesCache = ref([])
+const isLoading = ref(false)
+const errorMessage = ref(null)
+
+const puntoReorden = ref(0)
+const existenciaActual = ref(0)
+const entrada = ref(0)
+const merma = ref(0)
+const existenciaFinal = ref(0)
+
+const sucursalNombre = computed(() => {
+    const match = sucursalesCache.value.find((s) => s.id === inventarioStore.sucursalId)
+    return match?.sucursal || 'N/A'
+})
+
+const onProductoHover = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.classList.add('is-scrolling')
+
+    const overflow = text.scrollWidth - wrapper.clientWidth
+    if (overflow > 0) {
+        const duration = Math.max(1, overflow / 40) // px/s constante para cualquier largo de texto
+        text.style.transition = `transform ${duration}s linear`
+        text.style.transform = `translateX(-${overflow}px)`
+    } else {
+        text.classList.remove('is-scrolling')
+    }
+}
+
+const onProductoLeave = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.style.transition = 'transform 0.3s ease'
+    text.style.transform = 'translateX(0)'
+    setTimeout(() => text.classList.remove('is-scrolling'), 300)
+}
+
+const calcularExistenciaFinal = () => {
+    const actual = Number(existenciaActual.value) || 0
+    const ent = Number(entrada.value) || 0
+    const mer = Number(merma.value) || 0
+    existenciaFinal.value = actual + ent - mer
+}
+
+const cargarInventario = async () => {
+    const productoId = inventarioStore.productoId
+    const sucursalId = inventarioStore.sucursalId
+
+    if (!productoId || !sucursalId) {
+        errorMessage.value = 'No hay sucursal o producto seleccionado'
+        return
+    }
+
+    isLoading.value = true
+    errorMessage.value = null
+    try {
+        const [productoData, inventarioData] = await Promise.all([
+            ProductosService.getById(productoId),
+            getInventarioSucursalProducto(sucursalId, productoId),
+        ])
+
+        producto.value = productoData
+        puntoReorden.value = inventarioData.punto_reorden ?? 0
+        existenciaActual.value = inventarioData.existencia_actual ?? 0
+        entrada.value = 0
+        merma.value = 0
+        calcularExistenciaFinal()
+    } catch (e) {
+        errorMessage.value = `Error al cargar el inventario: ${e.message}`
+        console.error(e)
+    } finally {
+        isLoading.value = false
+    }
+}
+
+onMounted(async () => {
+    try {
+        sucursalesCache.value = await getSucursales()
+    } catch (error) {
+        console.error('Error al cargar sucursales:', error)
+    }
+    cargarInventario()
+})
+
+defineExpose({ consultar: cargarInventario })
 </script>

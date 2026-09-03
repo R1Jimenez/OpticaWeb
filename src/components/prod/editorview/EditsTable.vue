@@ -111,13 +111,13 @@ tbody td:nth-child(2) {
         </div>
         <table>
             <colgroup>
-                    <col style="width: 13.5%;">
-                    <col style="width: 59.5%;">
-                    <col style="width: 5%;">
-                    <col style="width: 7%;">
-                    <col style="width: 10%;">
-                    <col style="width: 5%;">
-                </colgroup>
+                <col style="width: 13.5%;">
+                <col style="width: 59.5%;">
+                <col style="width: 5%;">
+                <col style="width: 7%;">
+                <col style="width: 10%;">
+                <col style="width: 5%;">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Código</th>
@@ -136,12 +136,12 @@ tbody td:nth-child(2) {
                         </div>
                     </td>
                     <td @click="seleccionarProducto(producto)">{{ producto.nombre }}</td>
-                    <td @click="$emit('EditPrecMod')">
+                    <td @click="producto && producto.id ? $emit('EditPrecMod', producto) : console.warn('Fila sin producto valido', producto)">
                         <span class="material-icons" style="font-size:20px; color:#130348; cursor: pointer;">
                             sell
                         </span>
                     </td>
-                    <td @click="$emit('EditInv')">
+                    <td @click="producto && producto.id ? $emit('EditInv', producto) : console.warn('Fila sin producto valido', producto)">
                         <span class="material-icons" style="font-size:20px; color:#130348; cursor: pointer;">
                             inventory_2
                         </span>

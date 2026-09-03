@@ -17,7 +17,7 @@
     flex-direction: column;
     align-items: center;
     width: 30%;
-    height: 60%;
+    height: auto;
     background: radial-gradient(
         ellipse at center,
         #F0F0F0 10%,
@@ -57,7 +57,8 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 100%;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 .butonSection {
@@ -117,7 +118,6 @@
     display: flex;
     flex-direction: column;
     width: 97%;
-    height: 97%;
     background: radial-gradient(
         ellipse at center,
         #F0F0F0 10%,
@@ -150,7 +150,8 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: 100%;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .ButOp {

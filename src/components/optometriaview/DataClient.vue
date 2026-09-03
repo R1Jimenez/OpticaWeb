@@ -309,6 +309,7 @@
 
 <script setup>
 import { ref, watch, reactive } from 'vue'
+import { authHeaders } from '../../services/authHeader'
 
 const props = defineProps({
     cliente: { type: Object, default: null }
@@ -367,7 +368,7 @@ const handleAgregar = async () => {
     try {
         const response = await fetch('http://127.0.0.1:8000/cliente/create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ ...form, tipocliente: 1 })
         })
         if (!response.ok) {
@@ -395,7 +396,7 @@ const handleModificar = async () => {
     try {
         const response = await fetch(`http://127.0.0.1:8000/cliente/update/${props.cliente.id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ ...form, tipocliente: props.cliente.tipocliente ?? 1 })
         })
         if (!response.ok) {
@@ -423,7 +424,8 @@ const confirmDelete = async () => {
     isLoading.value = true
     try {
         const response = await fetch(`http://127.0.0.1:8000/cliente/delete/${props.cliente.id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: authHeaders()
         })
         if (!response.ok) throw new Error('Error al eliminar cliente')
         showToast('Cliente eliminado exitosamente')

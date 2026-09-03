@@ -53,6 +53,7 @@
     display: flex;
     flex-direction: column;
     gap: 13px;
+    margin-top: 10%;
 }
 
 .inputwrapper {
@@ -72,10 +73,10 @@
 
 .entryvals {
     width: 100%;
-    padding: 0.625rem 0.875rem 0.625rem 2.8rem;
+    padding: 0.400rem 0.875rem 0.400rem 2.8rem;
     border: 2px solid #130348;
     border-radius: 20px;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     transition: all 0.2s;
 }
 
@@ -100,6 +101,23 @@
     font-size: 1.5rem;
     margin-top: 10%;
     cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: auto;
+}
+
+.button:hover { opacity: 0.85; }
+.button.disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error-banner {
+    width: 100%;
+    margin-top: 4%;
+    padding: 10px 14px;
+    background: #FFF0F0;
+    border: 1px solid #FB1C2E;
+    border-radius: 8px;
+    color: #FB1C2E;
+    font-size: 0.95rem;
+    text-align: center;
 }
 </style>
 
@@ -124,14 +142,18 @@
                   type="text"
                   placeholder="Nombre de usuario"
                   class="entryvals"
+                  v-model="form.usuario"
+                  @keyup.enter="handleLogin"
                 />
             </div>
             <div class = "inputwrapper">
                 <span class="material-icons input-icon">lock</span>
                 <input 
-                  type="text"
+                  type="password"
                   placeholder="Contraseña"
                   class="entryvals"
+                  v-model="form.password"
+                  @keyup.enter="handleLogin"
                 />
             </div>
         </div>
@@ -140,20 +162,47 @@
                 ¿Olvidaste tu contraseña?
             </text>
         </div>
-        <div class="button" @click="handleSignup">
-            Iniciar Sesión
+        <div class="button" :class="{ disabled: isLoading }" @click="handleLogin">
+            {{ isLoading ? 'Ingresando...' : 'Iniciar Sesión' }}
         </div>
+        <div v-if="loginError" class="error-banner">{{ loginError }}</div>
     </div>
 </div>
 </template>
 
 <script setup>
-import {useRouter} from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { loginUser } from '../services/UserServices'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-const handleSignup = () => {
-    router.push('/Home')
+const form = ref({ usuario: '', password: '' })
+const isLoading = ref(false)
+const loginError = ref(null)
+
+const handleLogin = async () => {
+    loginError.value = null
+
+    if (!form.value.usuario.trim() || !form.value.password) {
+        loginError.value = 'Ingresa tu usuario y contraseña'
+        return
+    }
+
+    isLoading.value = true
+    try {
+        const user = await loginUser({
+            usuario:  form.value.usuario.trim(),
+            password: form.value.password,
+        })
+        authStore.setUser(user)
+        router.push('/Home')
+    } catch (e) {
+        loginError.value = e.message
+    } finally {
+        isLoading.value = false
+    }
 }
-
 </script>

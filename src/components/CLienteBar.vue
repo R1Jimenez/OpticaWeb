@@ -157,6 +157,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { authHeaders } from '../services/authHeader'
 
 const searchQuery = ref('')
 const resultados = ref([])
@@ -190,7 +191,8 @@ const buscar = async () => {
 
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/cliente/search?cliente=${encodeURIComponent(searchQuery.value)}`
+            `http://127.0.0.1:8000/cliente/search?cliente=${encodeURIComponent(searchQuery.value)}`,
+            { headers: authHeaders() }
         )
         const data = await response.json()
         resultados.value = data

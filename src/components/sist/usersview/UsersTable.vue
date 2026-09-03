@@ -3,7 +3,7 @@
     width: 98%;
     background: white;
     border: 2px solid #FB1C2E;
-    border-radius: 8px;
+    border-radius: 22px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     margin-bottom: 20px;
@@ -146,7 +146,6 @@ tbody td:last-child {
 <template>
     <div class="table-container">
 
-        <!-- Header -->
         <div class="table-header">
             <span v-if="isLoading">Cargando usuarios...</span>
             <span v-else-if="errorMessage">{{ errorMessage }}</span>
@@ -155,18 +154,14 @@ tbody td:last-child {
             </span>
         </div>
 
-        <!-- Loading -->
         <div v-if="isLoading" class="table-feedback">Cargando...</div>
 
-        <!-- Error -->
         <div v-else-if="errorMessage" class="table-feedback error">{{ errorMessage }}</div>
 
-        <!-- Empty -->
         <div v-else-if="usuariosFiltrados.length === 0" class="table-feedback">
             No hay usuarios para mostrar
         </div>
 
-        <!-- Table -->
         <div v-else class="table-scroll">
             <table>
                 <thead>
@@ -183,13 +178,10 @@ tbody td:last-child {
                 </thead>
                 <tbody>
                     <tr v-for="usuario in usuariosFiltrados" :key="usuario.id">
-                        <!-- Nombre completo -->
                         <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
 
-                        <!-- Usuario -->
                         <td>{{ usuario.usuario }}</td>
 
-                        <!-- Activo -->
                         <td>
                             <span
                                 class="material-icons status-icon"
@@ -199,7 +191,6 @@ tbody td:last-child {
                             </span>
                         </td>
 
-                        <!-- Sucursales (chips) -->
                         <td>
                             <div class="chips-wrap">
                                 <span
@@ -212,7 +203,6 @@ tbody td:last-child {
                             </div>
                         </td>
 
-                        <!-- Roles -->
                         <td>
                             <div class="roles-list">
                                 <span v-for="rolId in usuario.roles.slice(0, 3)" :key="rolId">
@@ -224,19 +214,11 @@ tbody td:last-child {
                             </div>
                         </td>
 
-                        <!-- Email -->
                         <td>{{ usuario.email }}</td>
 
-                        <!-- Teléfono -->
                         <td>{{ usuario.telefono }}</td>
 
-                        <!-- Edit button -->
                         <td>
-                            <!--
-                            <button>
-                                <span class="material-icons">edit_outlined</span>
-                            </button>
-                            -->
                             <button class="btn-editUs" @click="$emit('edit', usuario)" title="Editar usuario">
                                 <span class="material-icons">edit</span>
                             </button>
@@ -251,11 +233,12 @@ tbody td:last-child {
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { getUsers, getSucursales, getRoles } from '../../../services/UserServices'
 
 const props = defineProps({
     filters: {
         type: Object,
-        default: () => ({ usuario: null, sucursalId: null, rolId: null, activos: null })
+        default: () => ({ usuario: null, sucursalNombre: null, rolId: null, activos: null })
     }
 })
 
@@ -267,20 +250,18 @@ const roles      = ref([])
 const isLoading  = ref(false)
 const errorMessage = ref(null)
 
-// ── Fetch all data on mount ────────────────────────────
 onMounted(async () => {
     isLoading.value = true
     errorMessage.value = null
     try {
-        const [usersRes, sucRes, rolesRes] = await Promise.all([
-            fetch('http://127.0.0.1:8000/users/all'),
-            fetch('http://127.0.0.1:8000/sucursales/all'),
-            fetch('http://127.0.0.1:8000/users_roles/all'),
+        const [usuariosData, sucursalesData, rolesData] = await Promise.all([
+            getUsers(),
+            getSucursales(),
+            getRoles(),
         ])
-        if (!usersRes.ok || !sucRes.ok || !rolesRes.ok) throw new Error('Error al cargar datos')
-        usuarios.value   = await usersRes.json()
-        sucursales.value = await sucRes.json()
-        roles.value      = await rolesRes.json()
+        usuarios.value   = usuariosData
+        sucursales.value = sucursalesData
+        roles.value      = rolesData
     } catch (e) {
         errorMessage.value = `Error al cargar usuarios: ${e.message}`
         console.error(e)
@@ -290,9 +271,16 @@ onMounted(async () => {
 })
 
 // ── Helpers ────────────────────────────────────────────
-const getSucursalNombre = (sucId) => {
-    const suc = sucursales.value.find(s => s.id === sucId)
+const getSucursalNombre = (sucursalRef) => {
+    if (typeof sucursalRef === 'string') return sucursalRef
+    const suc = sucursales.value.find(s => s.id === sucursalRef)
     return suc?.sucursal ?? 'N/A'
+}
+
+const userHasSucursal = (usuario, sucursalNombre) => {
+    if (!sucursalNombre) return true
+    const accesos = Array.isArray(usuario.sucursal_acces) ? usuario.sucursal_acces : []
+    return accesos.some((sucursalRef) => getSucursalNombre(sucursalRef) === sucursalNombre)
 }
 
 const getRolNombre = (rolId) => {
@@ -321,8 +309,8 @@ const usuariosFiltrados = computed(() => {
         )
     }
 
-    if (props.filters.sucursalId != null) {
-        result = result.filter(u => u.sucursal_acces.includes(props.filters.sucursalId))
+    if (props.filters.sucursalNombre != null) {
+        result = result.filter(u => userHasSucursal(u, props.filters.sucursalNombre))
     }
 
     if (props.filters.rolId != null) {
@@ -341,9 +329,7 @@ const reload = async () => {
     isLoading.value = true
     errorMessage.value = null
     try {
-        const res = await fetch('http://127.0.0.1:8000/users/all')
-        if (!res.ok) throw new Error('Error al recargar')
-        usuarios.value = await res.json()
+        usuarios.value = await getUsers()
     } catch (e) {
         errorMessage.value = e.message
     } finally {

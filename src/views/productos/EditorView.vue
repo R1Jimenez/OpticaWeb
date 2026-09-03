@@ -53,7 +53,7 @@
                     :productos="productos"
                     @EditProdMod="() => { modoEdicion = 'editar'; ModProdAb = true }"
                     @EditPrecMod="abrirPrecios"
-                    @EditInv="ModInvEd = true"
+                    @EditInv="abrirInventarioEdicion"
                     @editProdMod="abrirEdicion"
                 />
             </div>
@@ -64,14 +64,28 @@
             @Cerr="ModProdAb = false"
             @productoCreado="onProductoCreado"
         />
+        <DisponibilidadModal
+            v-if="ModDisponibilidadAb"
+            @close="cancelarFlujoCreacion"
+            @confirmar="onDisponibilidadConfirmada"
+        />
+        <CrearInvModal
+            v-if="ModCrearInvAb"
+            :producto-id="productoIdPrecio"
+            :sucursales-seleccionadas="sucursalesSeleccionadas"
+            @close="cancelarFlujoCreacion"
+            @confirmar="onInventarioCreado"
+        />
         <EditPrec
             v-if="ModPrecEd"
             :producto-id="productoIdPrecio"
+            :sucursales-permitidas="sucursalesSeleccionadas.map(s => s.id)"
             @CerrPrec="cerrarPrecios"
         />
         <EditInv
             v-if="ModInvEd"
-            @CerrInv="ModInvEd = false"
+            :producto-id="productoIdInventario"
+            @CerrInv="cerrarInventarioEdicion"
         />
     </div>
 </template>
@@ -87,13 +101,19 @@ import EditsTable from '../../components/prod/editorview/EditsTable.vue';
 import EditProd from '../../components/prod/editorview/EditProd.vue';
 import EditPrec from '../../components/prod/editorview/EditPrec.vue';
 import EditInv from '../../components/prod/editorview/EditInv.vue';
+import DisponibilidadModal from '../../components/prod/editorview/editinv/DisponibilidadModal.vue';
+import CrearInvModal from '../../components/prod/editorview/editinv/CrearInvModal.vue';
 
 const ModProdAb = ref(false)
 const ModPrecEd = ref(false)
 const ModInvEd = ref(false)
+const ModDisponibilidadAb = ref(false)
+const ModCrearInvAb = ref(false)
 const modoEdicion = ref('editar')
 const store = useProductoEditorStore()
 const productoIdPrecio = ref(null)
+const productoIdInventario = ref(null)
+const sucursalesSeleccionadas = ref([])
 
 const productos = ref([])
 
@@ -140,19 +160,59 @@ const abrirNuevo = () => {
 const onProductoCreado = (id) => {
     ModProdAb.value = false
     productoIdPrecio.value = id
+    sucursalesSeleccionadas.value = []
+    ModDisponibilidadAb.value = true
+    cargarTodos()
+}
+
+const onDisponibilidadConfirmada = (seleccion) => {
+    sucursalesSeleccionadas.value = seleccion
+    ModDisponibilidadAb.value = false
+    ModCrearInvAb.value = true
+}
+
+const onInventarioCreado = () => {
+    ModCrearInvAb.value = false
     ModPrecEd.value = true
+}
+
+const cancelarFlujoCreacion = () => {
+    ModDisponibilidadAb.value = false
+    ModCrearInvAb.value = false
+    productoIdPrecio.value = null
+    sucursalesSeleccionadas.value = []
     cargarTodos()
 }
 
 const cerrarPrecios = () => {
     ModPrecEd.value = false
     productoIdPrecio.value = null
+    sucursalesSeleccionadas.value = []
     cargarTodos()
 }
 
 const abrirPrecios = (producto) => {
+    if (!producto || !producto.id) {
+        console.warn('abrirPrecios: se intento abrir el modal de precios sin un producto valido', producto)
+        return
+    }
     productoIdPrecio.value = producto.id
+    sucursalesSeleccionadas.value = []
     ModPrecEd.value = true
+}
+
+const abrirInventarioEdicion = (producto) => {
+    if (!producto || !producto.id) {
+        console.warn('abrirInventarioEdicion: se intento abrir el modal de inventario sin un producto valido', producto)
+        return
+    }
+    productoIdInventario.value = producto.id
+    ModInvEd.value = true
+}
+
+const cerrarInventarioEdicion = () => {
+    ModInvEd.value = false
+    productoIdInventario.value = null
 }
 
 onMounted(() => {

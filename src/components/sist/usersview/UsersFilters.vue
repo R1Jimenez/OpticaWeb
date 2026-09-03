@@ -4,7 +4,7 @@
     padding: 24px;
     background: linear-gradient(135deg, #F0F0F0, #F0F0F0);
     border: 2px solid #FB1C2E;
-    border-radius: 16px;
+    border-radius: 22px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
@@ -241,7 +241,7 @@
                     <span class="material-icons">store</span>
                     <select class="filter-select" v-model="selectedSucursal" :disabled="isLoading">
                         <option :value="null">{{ isLoading ? 'Cargando...' : 'Todas las sucursales' }}</option>
-                        <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
+                        <option v-for="suc in sucursales" :key="suc.id" :value="suc.sucursal">
                             {{ suc.sucursal }}
                         </option>
                     </select>
@@ -293,6 +293,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { getSucursales, getRoles } from '../../../services/UserServices'
 
 const emit = defineEmits(['nuevoUsuario', 'filterApplied'])
 
@@ -304,13 +305,12 @@ const isLoading  = ref(false)
 onMounted(async () => {
     isLoading.value = true
     try {
-        const [sucRes, rolesRes] = await Promise.all([
-            fetch('http://127.0.0.1:8000/sucursales/all'),
-            fetch('http://127.0.0.1:8000/users_roles/all'),
+        const [sucursalesData, rolesData] = await Promise.all([
+            getSucursales(),
+            getRoles(),
         ])
-        if (!sucRes.ok || !rolesRes.ok) throw new Error('Error al cargar catálogos')
-        sucursales.value = await sucRes.json()
-        roles.value      = await rolesRes.json()
+        sucursales.value = sucursalesData
+        roles.value      = rolesData
     } catch (e) {
         console.error('Error cargando catálogos:', e)
     } finally {
@@ -327,10 +327,10 @@ const soloActivos     = ref(false)
 // ── Actions ────────────────────────────────────────────
 const aplicarFiltros = () => {
     emit('filterApplied', {
-        usuario:    searchUsuario.value.trim() || null,
-        sucursalId: selectedSucursal.value,
-        rolId:      selectedRol.value,
-        activos:    soloActivos.value ? true : null,
+        usuario:         searchUsuario.value.trim() || null,
+        sucursalNombre:  selectedSucursal.value,
+        rolId:           selectedRol.value,
+        activos:         soloActivos.value ? true : null,
     })
 }
 
@@ -339,6 +339,6 @@ const limpiarFiltros = () => {
     selectedSucursal.value = null
     selectedRol.value      = null
     soloActivos.value      = false
-    emit('filterApplied', { usuario: null, sucursalId: null, rolId: null, activos: null })
+    emit('filterApplied', { usuario: null, sucursalNombre: null, rolId: null, activos: null })
 }
 </script>

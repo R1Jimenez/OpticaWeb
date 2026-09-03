@@ -42,7 +42,8 @@
         <div class="CotContenido">
             <NavBar />
             <div class="CotUsages">
-                <CotizEdits />
+                <FiltCotiz />
+                <ProdCotiz />
                 <CotizEdits />
             </div>
         </div>
@@ -53,5 +54,7 @@
 import Header from '../../components/Header.vue';
 import NavBar from '../../components/NavBar.vue';
 import CotizEdits from '../../components/vent/cotizacionview/CotizEdits.vue'
+import FiltCotiz from '../../components/vent/cotizacionview/FiltCotiz.vue'
+import ProdCotiz from '../../components/vent/cotizacionview/ProdCotiz.vue'
 
 </script>

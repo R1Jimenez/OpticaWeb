@@ -91,7 +91,7 @@ import UsersTable from '../../components/sist/usersview/UsersTable.vue'
 import CreateUserModal from '../../components/sist/usersview/CreateUserModal.vue'
 import EditUserModal from '../../components/sist/usersview/EditUserModal.vue'
 
-const activeFilters = ref({ usuario: null, sucursalId: null, rolId: null, activos: null })
+const activeFilters = ref({ usuario: null, sucursalNombre: null, rolId: null, activos: null })
 const tableRef = ref(null)
 const usuarioAEditar = ref(null)
 const showCreateModal = ref(false)

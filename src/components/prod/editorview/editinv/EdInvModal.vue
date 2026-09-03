@@ -193,6 +193,54 @@
     color: #999;
 }
 
+.SelectWrapper {
+    position: relative;
+    flex: 1;
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+    transition: all 0.4s ease;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+    max-height: 0;
+    opacity: 0;
+}
+
+.DropdownList {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin-top: 4px;
+    background: #F0F0F0;
+    border: 2px solid #FB1C2E;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.DropdownItem {
+    padding: 6px 1rem;
+    font-size: 1rem;
+    color: #130348;
+    cursor: pointer;
+}
+
+.DropdownItem:hover {
+    background: #BCBCBC;
+}
+
+.BusquedaError {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #FB1C2E;
+}
+
 .ConsBut {
     display: flex;
     flex-direction: row;
@@ -267,18 +315,31 @@
                         type=double
                         placeholder="Ingresar Producto"
                         class="CliBarEdInv"
-                        v-model="searchQuery"
+                        v-model="nombreQuery"
                         autocomplete="off"
+                        @keyup.enter="buscarProducto"
                     />
                 </div>
 
                 <div class="minrow2">
                     <text>Estatus:</text>
-                    <div class="SectBoxINPE">
-                        <span>
-                            Activo
-                        </span>
-                        <span class="material-icons" style="font-size:20px;">arrow_drop_down</span>
+                    <div class="SelectWrapper">
+                        <div class="SectBoxINPE" @click="toggleEstatusDropdown">
+                            <span>{{ estatusSeleccionado.label }}</span>
+                            <span class="material-icons" style="font-size:20px;">arrow_drop_down</span>
+                        </div>
+                        <Transition name="dropdown">
+                            <div v-if="mostrarEstatusDropdown" class="DropdownList">
+                                <div
+                                    v-for="opcion in opcionesEstatus"
+                                    :key="opcion.id"
+                                    class="DropdownItem"
+                                    @click="seleccionarEstatus(opcion)"
+                                >
+                                    {{ opcion.label }}
+                                </div>
+                            </div>
+                        </Transition>
                     </div>
                 </div>
             </div>
@@ -290,22 +351,41 @@
                         type=double
                         placeholder="Ingresar Código"
                         class="CliBarEdInvCod"
-                        v-model="searchQuery"
+                        v-model="codigoQuery"
                         autocomplete="off"
+                        @keyup.enter="buscarProducto"
                     />
+                    <span v-if="errorBusqueda" class="BusquedaError">{{ errorBusqueda }}</span>
                 </div>
 
                 <div class="minrow3">
                     <text>Sucursal:</text>
-                    <div class="SectBoxINPE">
-                        <span>
-                            Smart Torres Del Sur
-                        </span>
-                        <span class="material-icons" style="font-size:20px;">arrow_drop_down</span>
+                    <div class="SelectWrapper">
+                        <div class="SectBoxINPE" @click="toggleSucursalDropdown">
+                            <span :class="{ placeholder: !sucursalSeleccionada }">
+                                {{ sucursalSeleccionada?.sucursal || 'Seleccionar' }}
+                            </span>
+                            <span class="material-icons" style="font-size:20px;">arrow_drop_down</span>
+                        </div>
+                        <Transition name="dropdown">
+                            <div v-if="mostrarSucursalDropdown" class="DropdownList">
+                                <div v-if="isLoadingSucursales" class="DropdownItem">Cargando...</div>
+                                <div v-else-if="sucursales.length === 0" class="DropdownItem">Sin sucursales disponibles</div>
+                                <div
+                                    v-for="sucursal in sucursales"
+                                    v-else
+                                    :key="sucursal.id"
+                                    class="DropdownItem"
+                                    @click="seleccionarSucursal(sucursal)"
+                                >
+                                    {{ sucursal.sucursal }}
+                                </div>
+                            </div>
+                        </Transition>
                     </div>
                 </div>
 
-                <button class="ConsBut">
+                <button class="ConsBut" @click="consultar">
                     <span class="material-icons">search</span>
                     <span>Consultar</span>
                 </button>
@@ -359,5 +439,98 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { getSucursales } from '../../../../services/SucursalesServices'
+import { ProductosService } from '../../../../services/ProductosServices'
+import { useSucursalStore } from '../../../../stores/sucursal'
+import { useInventarioEdicionStore } from '../../../../stores/inventarioEdicion'
 
+const emit = defineEmits(['consultar'])
+
+const inventarioStore = useInventarioEdicionStore()
+
+const nombreQuery = ref('')
+const codigoQuery = ref('')
+const errorBusqueda = ref(null)
+
+// busca el producto por nombre/codigo y guarda su id en el store, sin disparar la consulta de inventario
+const buscarProducto = async () => {
+    if (!nombreQuery.value.trim() && !codigoQuery.value.trim()) return
+
+    errorBusqueda.value = null
+    try {
+        const resultados = await ProductosService.getFiltered({
+            nombre: nombreQuery.value.trim() || null,
+            codigo: codigoQuery.value.trim() || null,
+        })
+        if (!resultados.length) {
+            errorBusqueda.value = 'No se encontró ningún producto con esos datos'
+            return
+        }
+        inventarioStore.setProducto(resultados[0].id)
+    } catch (error) {
+        errorBusqueda.value = `Error al buscar el producto: ${error.message}`
+    }
+}
+
+const opcionesEstatus = [
+    { id: 1, label: 'Activo' },
+    { id: 2, label: 'Inactivo' },
+]
+const estatusSeleccionado = ref(opcionesEstatus[0])
+const mostrarEstatusDropdown = ref(false)
+
+const toggleEstatusDropdown = () => {
+    mostrarEstatusDropdown.value = !mostrarEstatusDropdown.value
+}
+
+const seleccionarEstatus = (opcion) => {
+    estatusSeleccionado.value = opcion
+    mostrarEstatusDropdown.value = false
+}
+
+const sucursalStore = useSucursalStore()
+const sucursales = ref([])
+const sucursalSeleccionada = ref(null)
+const mostrarSucursalDropdown = ref(false)
+const isLoadingSucursales = ref(false)
+
+const cargarSucursales = async () => {
+    isLoadingSucursales.value = true
+    try {
+        sucursales.value = await getSucursales()
+    } catch (error) {
+        console.error('Error al cargar sucursales:', error)
+    } finally {
+        isLoadingSucursales.value = false
+    }
+}
+
+const toggleSucursalDropdown = async () => {
+    mostrarSucursalDropdown.value = !mostrarSucursalDropdown.value
+
+    if (mostrarSucursalDropdown.value && sucursales.value.length === 0) {
+        await cargarSucursales()
+    }
+}
+
+const seleccionarSucursal = (sucursal) => {
+    sucursalSeleccionada.value = sucursal
+    mostrarSucursalDropdown.value = false
+    inventarioStore.setSucursal(sucursal.id)
+}
+
+const consultar = () => {
+    emit('consultar')
+}
+
+onMounted(async () => {
+    await cargarSucursales()
+
+    // preseleccionar la sucursal activa en el header, usando el objeto completo del catálogo
+    const actual = sucursalStore.sucursalSeleccionada
+    if (actual) {
+        sucursalSeleccionada.value = sucursales.value.find((s) => s.id === actual.id) ?? actual
+    }
+})
 </script>

@@ -1,6 +1,29 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import Login from '../views/LoginView.vue'
 
+const getStoredAuthUser = () => {
+    try {
+        return JSON.parse(localStorage.getItem('user') ?? 'null')
+    } catch {
+        return null
+    }
+}
+
+const getAuthToken = (storedUser) => {
+    if (!storedUser) return null
+
+    const candidate = storedUser.user ?? storedUser
+    return candidate?.token
+        || candidate?.access_token
+        || candidate?.accessToken
+        || storedUser?.token
+        || storedUser?.access_token
+        || storedUser?.accessToken
+        || null
+}
+
+const hasValidToken = () => Boolean(getAuthToken(getStoredAuthUser()))
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
@@ -200,6 +223,21 @@ const router = createRouter({
             component: () => import('../views/productos/EditorView.vue')
         }
     ]
+})
+
+router.beforeEach((to) => {
+    const isLoginRoute = to.path === '/'
+    const isAuthenticated = hasValidToken()
+
+    if (!isAuthenticated && !isLoginRoute) {
+        return { path: '/' }
+    }
+
+    if (isAuthenticated && isLoginRoute) {
+        return { path: '/Home' }
+    }
+
+    return true
 })
 
 export default router

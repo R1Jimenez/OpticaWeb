@@ -94,6 +94,7 @@
 
 <script setup>
 import {ref} from 'vue'
+import { authHeaders } from '../services/authHeader'
 import Header from '../components/Header.vue'
 import NavBar from '../components/NavBar.vue'
 import ClienteBar from '../components/CLienteBar.vue'
@@ -129,7 +130,7 @@ const onLimpiarBusqueda = () => {
 const cargarPacientes = async (clienteId) => {
     isLoadingPacientes.value = true
     try {
-        const res = await fetch(`http://127.0.0.1:8000/pacientes/cliente/${clienteId}`)
+        const res = await fetch(`http://127.0.0.1:8000/pacientes/cliente/${clienteId}`, { headers: authHeaders() })
         pacientes.value = await res.json()
     } catch (e) {
         pacientes.value = []

@@ -407,6 +407,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { getSucursales, getRoles, createUser } from '../../../services/UserServices'
 
 const emit = defineEmits(['close', 'created'])
 
@@ -418,12 +419,12 @@ const catalogLoading = ref(false)
 onMounted(async () => {
     catalogLoading.value = true
     try {
-        const [sucRes, rolesRes] = await Promise.all([
-            fetch('http://127.0.0.1:8000/sucursales/all'),
-            fetch('http://127.0.0.1:8000/users_roles/all'),
+        const [sucursalesData, rolesData] = await Promise.all([
+            getSucursales(),
+            getRoles(),
         ])
-        allSucursales.value = await sucRes.json()
-        allRoles.value      = await rolesRes.json()
+        allSucursales.value = sucursalesData
+        allRoles.value      = rolesData
     } catch (e) {
         console.error('Error cargando catálogos:', e)
     } finally {
@@ -501,32 +502,22 @@ const handleSubmit = async () => {
 
     isLoading.value = true
     try {
-        const res = await fetch('http://127.0.0.1:8000/users/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nombres:         form.value.nombres,
-                apellidos:       form.value.apellidos,
-                usuario:         form.value.usuario,
-                email:           form.value.email,
-                telefono:        form.value.telefono,
-                password:        form.value.password,
-                Sucursal:        form.value.sucursal,
-                sucursal_acces:  form.value.sucursalesAcceso,
-                roles:           form.value.roles,
-            }),
+        await createUser({
+            nombres:         form.value.nombres,
+            apellidos:       form.value.apellidos,
+            usuario:         form.value.usuario,
+            email:           form.value.email,
+            telefono:        form.value.telefono,
+            password:        form.value.password,
+            Sucursal:        form.value.sucursal,
+            sucursal_acces:  form.value.sucursalesAcceso,
+            roles:           form.value.roles,
         })
-
-        if (!res.ok) {
-            const data = await res.json()
-            globalError.value = data.detail ?? 'Error al crear el usuario'
-            return
-        }
 
         emit('created')
         emit('close')
     } catch (e) {
-        globalError.value = `Error de conexión: ${e.message}`
+        globalError.value = e.message ?? 'Error al crear el usuario'
     } finally {
         isLoading.value = false
     }

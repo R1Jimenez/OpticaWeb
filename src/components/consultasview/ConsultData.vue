@@ -268,6 +268,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { authHeaders } from '../../services/authHeader'
 
 const armazones       = ref([])
 const servicios       = ref([])
@@ -281,8 +282,8 @@ onMounted(async () => {
     loadingServicios.value = true
     try {
         const [armRes, serRes] = await Promise.all([
-            fetch('http://127.0.0.1:8000/armazones/all'),
-            fetch('http://127.0.0.1:8000/servicios/all'),
+            fetch('http://127.0.0.1:8000/armazones/all', { headers: authHeaders() }),
+            fetch('http://127.0.0.1:8000/servicios/all', { headers: authHeaders() }),
         ])
         armazones.value = await armRes.json()
         servicios.value = await serRes.json()

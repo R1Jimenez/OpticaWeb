@@ -521,6 +521,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { getSucursales, getRoles, updateUser } from '../../../services/UserServices'
 
 const props = defineProps({
     usuario: { type: Object, required: true }
@@ -536,12 +537,13 @@ const catalogLoading = ref(false)
 onMounted(async () => {
     catalogLoading.value = true
     try {
-        const [sucRes, rolesRes] = await Promise.all([
-            fetch('http://127.0.0.1:8000/sucursales/all'),
-            fetch('http://127.0.0.1:8000/users_roles/all'),
+        const [sucursalesData, rolesData] = await Promise.all([
+            getSucursales(),
+            getRoles(),
         ])
-        allSucursales.value = await sucRes.json()
-        allRoles.value      = await rolesRes.json()
+        allSucursales.value = sucursalesData
+        allRoles.value      = rolesData
+        normalizeSucursalFields()
     } catch (e) {
         console.error('Error cargando catálogos:', e)
     } finally {
@@ -550,8 +552,27 @@ onMounted(async () => {
 })
 
 // ── Helpers ────────────────────────────────────────────
-const getSucursalNombre = (id) => allSucursales.value.find(s => s.id === id)?.sucursal ?? 'N/A'
+const getSucursalNombre = (sucursalRef) => {
+    if (typeof sucursalRef === 'string') return sucursalRef
+    return allSucursales.value.find(s => s.id === sucursalRef)?.sucursal ?? 'N/A'
+}
 const getRolNombre      = (id) => allRoles.value.find(r => r.id === id)?.rol ?? 'Desconocido'
+
+const findSucursalByRef = (sucursalRef) => {
+    if (typeof sucursalRef === 'string') {
+        return allSucursales.value.find((s) => s.sucursal === sucursalRef)
+    }
+    return allSucursales.value.find((s) => s.id === sucursalRef)
+}
+
+const getSucursalIdByRef = (sucursalRef) => findSucursalByRef(sucursalRef)?.id ?? null
+
+const normalizeSucursalFields = () => {
+    form.value.sucursal = getSucursalIdByRef(form.value.sucursal)
+    form.value.sucursalesAcceso = form.value.sucursalesAcceso
+        .map(getSucursalIdByRef)
+        .filter((id) => id != null)
+}
 
 const availableSucursales = computed(() =>
     allSucursales.value.filter(s => !form.value.sucursalesAcceso.includes(s.id))
@@ -611,29 +632,23 @@ const handleSubmit = async () => {
     if (!validate()) return
     isLoading.value = true
     try {
-        const res = await fetch(`http://127.0.0.1:8000/users/update/${props.usuario.id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nombres:        form.value.nombres,
-                apellidos:      form.value.apellidos,
-                usuario:        form.value.usuario,
-                email:          form.value.email,
-                telefono:       form.value.telefono,
-                Sucursal:       form.value.sucursal,
-                sucursal_acces: form.value.sucursalesAcceso,
-                roles:          form.value.roles,
-            }),
+        const sucursalNombre = getSucursalNombre(form.value.sucursal)
+        const sucursalesAccesoNombres = form.value.sucursalesAcceso.map(getSucursalNombre)
+
+        await updateUser(props.usuario.id, {
+            nombres:        form.value.nombres,
+            apellidos:      form.value.apellidos,
+            usuario:        form.value.usuario,
+            email:          form.value.email,
+            telefono:       form.value.telefono,
+            Sucursal:       sucursalNombre,
+            sucursal_acces: sucursalesAccesoNombres,
+            roles:          form.value.roles,
         })
-        if (!res.ok) {
-            const data = await res.json()
-            globalError.value = data.detail ?? 'Error al actualizar usuario'
-            return
-        }
         emit('updated')
         emit('close')
     } catch (e) {
-        globalError.value = `Error de conexión: ${e.message}`
+        globalError.value = e.message ?? 'Error al actualizar usuario'
     } finally {
         isLoading.value = false
     }
@@ -657,20 +672,11 @@ const handleChangePw = async () => {
     }
     pwLoading.value = true
     try {
-        const res = await fetch(`http://127.0.0.1:8000/users/update/${props.usuario.id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pwForm.value.password }),
-        })
-        if (!res.ok) {
-            const data = await res.json()
-            pwError.value = data.detail ?? 'Error al cambiar contraseña'
-            return
-        }
+        await updateUser(props.usuario.id, { password: pwForm.value.password })
         showChangePw.value = false
         pwForm.value = { password: '', confirm: '' }
     } catch (e) {
-        pwError.value = `Error de conexión: ${e.message}`
+        pwError.value = e.message ?? 'Error al cambiar contraseña'
     } finally {
         pwLoading.value = false
     }
