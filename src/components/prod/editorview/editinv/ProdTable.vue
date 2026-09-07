@@ -295,7 +295,7 @@ const onProductoHover = (event) => {
 
     const overflow = text.scrollWidth - wrapper.clientWidth
     if (overflow > 0) {
-        const duration = Math.max(1, overflow / 40) // px/s constante para cualquier largo de texto
+        const duration = Math.max(1, overflow / 40)
         text.style.transition = `transform ${duration}s linear`
         text.style.transform = `translateX(-${overflow}px)`
     } else {

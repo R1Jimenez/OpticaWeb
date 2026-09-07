@@ -99,6 +99,25 @@ tbody td:nth-child(2) {
     font-weight: 550;
     color: white;
 }
+
+.producto-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.producto-text {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+.producto-text.is-scrolling {
+    max-width: none;
+    text-overflow: clip;
+}
 </style>
 
 <template>
@@ -135,7 +154,11 @@ tbody td:nth-child(2) {
                             <text>{{ producto.codigo }}</text>
                         </div>
                     </td>
-                    <td @click="seleccionarProducto(producto)">{{ producto.nombre }}</td>
+                    <td @click="seleccionarProducto(producto)">
+                        <div class="producto-wrapper" @mouseenter="onProductoHover" @mouseleave="onProductoLeave">
+                            <span class="producto-text">{{ producto.nombre }}</span>
+                        </div>
+                    </td>
                     <td @click="producto && producto.id ? $emit('EditPrecMod', producto) : console.warn('Fila sin producto valido', producto)">
                         <span class="material-icons" style="font-size:20px; color:#130348; cursor: pointer;">
                             sell
@@ -177,5 +200,30 @@ const emits = defineEmits(['EditProdMod', 'EditPrecMod', 'EditInv'])
 const seleccionarProducto = async (producto) => {
     const productoCompleto = await ProductosService.getById(producto.id)
     emits('EditProdMod', productoCompleto)
+}
+
+const onProductoHover = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.classList.add('is-scrolling')
+
+    const overflow = text.scrollWidth - wrapper.clientWidth
+    if (overflow > 0) {
+        const duration = Math.max(1, overflow / 40)
+        text.style.transition = `transform ${duration}s linear`
+        text.style.transform = `translateX(-${overflow}px)`
+    } else {
+        text.classList.remove('is-scrolling')
+    }
+}
+
+const onProductoLeave = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.style.transform = 'translateX(0)'
+    text.addEventListener('transitionend', () => {
+        text.classList.remove('is-scrolling')
+        text.style.transition = ''
+    }, { once: true })
 }
 </script>

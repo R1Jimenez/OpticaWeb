@@ -180,8 +180,10 @@
     border-radius: 16px;
     padding: 28px 32px;
     min-width: 360px;
-    max-width: 480px;
+    max-width: 520px;
     width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
@@ -226,6 +228,37 @@
 }
 
 .modal-row .modal-field { flex: 1; }
+
+.modal-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    margin-bottom: 14px;
+}
+
+.modal-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #130348;
+}
+
+.modal-field textarea {
+    padding: 8px 10px;
+    border: 1px solid #BCBCBC;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #130348;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.modal-field textarea:focus {
+    border-color: #130348;
+    border-width: 2px;
+}
 
 .modal-buttons {
     display: flex;
@@ -376,8 +409,8 @@
 
                 <div class="modal-row">
                     <div class="modal-field">
-                        <label>Fecha de Nacimiento</label>
-                        <input v-model="newPaciente.fechanacimiento" type="date" />
+                        <label>Edad *</label>
+                        <input v-model.number="newPaciente.edad" type="number" min="0" placeholder="Edad" />
                     </div>
                     <div class="modal-field">
                         <label>Ocupación</label>
@@ -386,8 +419,50 @@
                 </div>
 
                 <div class="modal-field">
-                    <label>Teléfono</label>
-                    <input v-model="newPaciente.telefono" placeholder="Teléfono" />
+                    <label>Problema Ocular</label>
+                    <input v-model="newPaciente.problema_ocular" placeholder="Problema ocular" />
+                </div>
+
+                <div class="modal-field">
+                    <label>Medicamento Actual</label>
+                    <input v-model="newPaciente.medicamento_actual" placeholder="Medicamento actual" />
+                </div>
+
+                <div class="modal-field">
+                    <label>Principal Deficiencia Visual</label>
+                    <input v-model="newPaciente.princip_defi_visual" placeholder="Principal deficiencia visual" />
+                </div>
+
+                <div class="modal-checkboxes">
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.lentes" />
+                        Usa lentes
+                    </label>
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.antecedentes_familiares_lentes" />
+                        Antecedentes familiares de lentes
+                    </label>
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.hipertension" />
+                        Hipertensión
+                    </label>
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.diabetico" />
+                        Diabético
+                    </label>
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.util_lentes" />
+                        Utiliza lentes
+                    </label>
+                    <label class="modal-checkbox">
+                        <input type="checkbox" v-model="newPaciente.cefaleas" />
+                        Cefaleas
+                    </label>
+                </div>
+
+                <div class="modal-field">
+                    <label>Otros</label>
+                    <textarea v-model="newPaciente.otros" rows="2" placeholder="Observaciones adicionales"></textarea>
                 </div>
 
                 <div class="modal-buttons">
@@ -415,7 +490,7 @@
 
 <script setup>
 import { ref, reactive, watch } from 'vue'
-import { authHeaders } from '../../services/authHeader'
+import { createPaciente } from '../../services/PacientesServices'
 
 const props = defineProps({
     pacientes:            { type: Array,  default: () => [] },
@@ -430,9 +505,24 @@ const isExpanded = ref(true)
 const showModal  = ref(false)
 const isCreating = ref(false)
 
-const newPaciente = reactive({
-    nombres: '', apellidos: '', fechanacimiento: '', ocupacion: '', telefono: ''
+const pacienteVacio = () => ({
+    nombres: '',
+    apellidos: '',
+    edad: null,
+    ocupacion: '',
+    problema_ocular: '',
+    medicamento_actual: '',
+    princip_defi_visual: '',
+    otros: '',
+    lentes: false,
+    antecedentes_familiares_lentes: false,
+    hipertension: false,
+    diabetico: false,
+    util_lentes: false,
+    cefaleas: false,
 })
+
+const newPaciente = reactive(pacienteVacio())
 
 const toast = reactive({ visible: false, message: '', isError: false })
 
@@ -453,7 +543,7 @@ const seleccionarPaciente = (paciente) => {
 const cerrarModal = () => {
     if (isCreating.value) return
     showModal.value = false
-    Object.keys(newPaciente).forEach(k => newPaciente[k] = '')
+    Object.assign(newPaciente, pacienteVacio())
 }
 
 const showToast = (message, isError = false) => {
@@ -469,19 +559,14 @@ const crearPaciente = async () => {
         showToast('Por favor complete al menos Nombres y Apellidos', true)
         return
     }
+    if (newPaciente.edad === null || newPaciente.edad === '') {
+        showToast('Por favor ingrese la edad', true)
+        return
+    }
 
     isCreating.value = true
     try {
-        const response = await fetch('http://127.0.0.1:8000/pacientes/create', {
-            method: 'POST',
-            headers: authHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ ...newPaciente, clienteid: props.clienteId })
-        })
-
-        if (!response.ok) {
-            const err = await response.json()
-            throw new Error(err.detail || 'Error al crear paciente')
-        }
+        await createPaciente({ ...newPaciente, cliente_id: props.clienteId })
 
         showToast('Paciente creado exitosamente')
         cerrarModal()

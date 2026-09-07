@@ -127,7 +127,6 @@ tbody tr {
     cursor: pointer;
 }
 
-.TablaProductos tbody tr:first-child td {text-align: left;}
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background-color: #FAFAFA; }
 
@@ -141,8 +140,31 @@ tbody td {
     text-align: center;
 }
 
+.TablaProductos tbody td:nth-child(1) {
+    text-align: left;
+}
+
 .TablaProductos tbody td:nth-child(2) {
     text-align: left;
+}
+
+.producto-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.producto-text {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+.producto-text.is-scrolling {
+    max-width: none;
+    text-overflow: clip;
 }
 
 .Eliminar {
@@ -212,6 +234,17 @@ tbody td {
     color: white;
     font-size: 1rem;
     cursor: pointer;
+}
+
+.Cobr:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.errorCobro {
+    color: #FB1C2E;
+    font-weight: 600;
+    text-align: left;
 }
 
 .Cobr:hover {
@@ -287,24 +320,24 @@ tbody td {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>OFTALMICO N/A CRISTAL MONOFOCAL FOTOCROMATICO METALICOS</td>
-                    <td>$100.00</td>
-                    <td>1</td>
-                    <td>$200.00</td>
+                <tr v-if="cotizacionStore.items.length === 0">
+                    <td colspan="5">Sin productos agregados</td>
+                </tr>
+                <tr v-for="item in cotizacionStore.items" :key="item.producto.id">
                     <td>
-                        <button class="Eliminar">
+                        <div class="producto-wrapper" @mouseenter="onProductoHover" @mouseleave="onProductoLeave">
+                            <span class="producto-text">{{ item.producto.nombre }}</span>
+                        </div>
+                    </td>
+                    <td>${{ Number(item.precio?.precio || 0).toFixed(2) }}</td>
+                    <td>{{ item.piezas }}</td>
+                    <td>${{ totalItem(item).toFixed(2) }}</td>
+                    <td>
+                        <button class="Eliminar" @click="quitarProducto(item)">
                             <span class="material-icons">close</span>
                             <span>Eliminar</span>
                         </button>
                     </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
                 </tr>
             </tbody>
         </table>
@@ -329,8 +362,8 @@ tbody td {
                     <td>$100.00</td>
                     <td>$200.00</td>
                     <td>
-                        <button class="accept">
-                            <span>Aceptar</span>
+                        <button class="accept" @click="imprimirMuestra">
+                            <span>Imprimir Cotización Muestra</span>
                         </button>
                     </td>
                 </tr>
@@ -358,11 +391,14 @@ tbody td {
                         />
                     </td>
                     <td>
-                        <button class="Cobr">
+                        <button class="Cobr" :disabled="enviandoCotizacion" @click="cobrar">
                             <span class="material-icons">attach_money</span>
-                            <span>Cobrar</span>
+                            <span>{{ enviandoCotizacion ? 'Enviando...' : 'Cobrar' }}</span>
                         </button>
                     </td>
+                </tr>
+                <tr v-if="errorCobro">
+                    <td colspan="4" class="errorCobro">{{ errorCobro }}</td>
                 </tr>
             </tbody>
         </table>
@@ -372,13 +408,15 @@ tbody td {
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useCotizacionStore } from '../../../stores/cotizacion'
-import { authHeaders } from '../../../services/authHeader'
+import { getPacientesByCliente } from '../../../services/PacientesServices'
 
 const cotizacionStore = useCotizacionStore()
 
 const pacientes = ref([])
 const isLoadingPacientes = ref(false)
 const mostrarDropdownPacientes = ref(false)
+const enviandoCotizacion = ref(false)
+const errorCobro = ref(null)
 
 const nombreCliente = computed(() => {
     const cliente = cotizacionStore.clienteSeleccionado
@@ -392,11 +430,76 @@ const nombrePaciente = computed(() => {
     return `${paciente.nombres} ${paciente.apellidos}`
 })
 
+const totalItem = (item) => Number(item.precio?.precio || 0) * item.piezas
+
+const quitarProducto = (item) => {
+    cotizacionStore.quitarItem(item)
+}
+
+const imprimirMuestra = () => {
+    const ventana = window.open('', '_blank')
+    if (!ventana) return
+
+    const totalNormal = cotizacionStore.items.reduce((acc, item) => acc + totalItem(item), 0)
+    const filas = cotizacionStore.items.map(item => `
+        <tr>
+            <td>${item.producto.nombre}</td>
+            <td>${item.piezas}</td>
+            <td>$${Number(item.precio?.precio || 0).toFixed(2)}</td>
+            <td>$${totalItem(item).toFixed(2)}</td>
+        </tr>
+    `).join('')
+
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Cotización Muestra</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                h2 { margin-bottom: 0; }
+                table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 0.9rem; }
+                .total { text-align: right; font-weight: bold; margin-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <h2>Cotización Muestra (sin validez fiscal)</h2>
+            <p>Cliente: ${nombreCliente.value || 'N/A'}</p>
+            <p>Paciente: ${nombrePaciente.value || 'N/A'}</p>
+            <table>
+                <thead>
+                    <tr><th>Producto</th><th>Piezas</th><th>Precio</th><th>Subtotal</th></tr>
+                </thead>
+                <tbody>${filas}</tbody>
+            </table>
+            <p class="total">Total: $${totalNormal.toFixed(2)}</p>
+        </body>
+        </html>
+    `)
+    ventana.document.close()
+    ventana.focus()
+    ventana.print()
+}
+
+const cobrar = async () => {
+    errorCobro.value = null
+    enviandoCotizacion.value = true
+    try {
+        const cotizacion = await cotizacionStore.crearCotizacion()
+        cotizacionStore.limpiarItems()
+        cotizacionStore.setPagoInicial(0)
+        alert(`Cotización #${cotizacion.id} creada correctamente. Total: $${Number(cotizacion.total_venta).toFixed(2)}`)
+    } catch (error) {
+        errorCobro.value = error.message
+    } finally {
+        enviandoCotizacion.value = false
+    }
+}
+
 const cargarPacientes = async (clienteId) => {
     isLoadingPacientes.value = true
     try {
-        const response = await fetch(`http://127.0.0.1:8000/pacientes/cliente/${clienteId}`, { headers: authHeaders() })
-        pacientes.value = await response.json()
+        pacientes.value = await getPacientesByCliente(clienteId)
     } catch (error) {
         console.error('Error al cargar pacientes:', error)
         pacientes.value = []
@@ -419,9 +522,33 @@ const seleccionarPaciente = (paciente) => {
     mostrarDropdownPacientes.value = false
 }
 
-// El store limpia el paciente al cambiar/quitar cliente; aquí solo cerramos el dropdown y refrescamos la lista cacheada
 watch(() => cotizacionStore.clienteSeleccionado, () => {
     mostrarDropdownPacientes.value = false
     pacientes.value = []
 })
+
+const onProductoHover = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.classList.add('is-scrolling')
+
+    const overflow = text.scrollWidth - wrapper.clientWidth
+    if (overflow > 0) {
+        const duration = Math.max(1, overflow / 40)
+        text.style.transition = `transform ${duration}s linear`
+        text.style.transform = `translateX(-${overflow}px)`
+    } else {
+        text.classList.remove('is-scrolling')
+    }
+}
+
+const onProductoLeave = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.style.transform = 'translateX(0)'
+    text.addEventListener('transitionend', () => {
+        text.classList.remove('is-scrolling')
+        text.style.transition = ''
+    }, { once: true })
+}
 </script>

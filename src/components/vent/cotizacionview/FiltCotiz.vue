@@ -463,12 +463,13 @@
             <div class="miniminrow">
                 <text>Pago Inicial:</text>
                 <input
-                    type=double
+                    type="number"
+                    min="0"
+                    step="0.01"
                     placeholder="$"
                     class="CliBarEdInvPrec"
-                    v-model="nombreQuery"
+                    v-model="pagoInicial"
                     autocomplete="off"
-                    @keyup.enter="buscarProducto"
                 />
             </div>
         </div>
@@ -518,6 +519,11 @@ const loadingPlazo = ref(false)
 const productoQuery = ref('')
 const buscandoProducto = ref(false)
 
+const pagoInicial = computed({
+    get: () => cotizacionStore.pagoInicial,
+    set: (valor) => cotizacionStore.setPagoInicial(valor === '' ? 0 : Number(valor)),
+})
+
 let debounceTimerCliente = null
 
 const emit = defineEmits(['clienteSeleccionado'])
@@ -531,7 +537,6 @@ const onInputCliente = () => {
         return
     }
 
-    // Espera 400ms después de que el usuario deja de escribir
     debounceTimerCliente = setTimeout(() => {
         buscarCliente()
     }, 400)

@@ -142,6 +142,25 @@ tbody td:nth-child(2) {
     border: 1px solid #58B358;
     color: #58B358;
 }
+
+.producto-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.producto-text {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+.producto-text.is-scrolling {
+    max-width: none;
+    text-overflow: clip;
+}
 </style>
 
 <template>
@@ -180,7 +199,11 @@ tbody td:nth-child(2) {
                             readonly
                         />
                     </td>
-                    <td>{{ nombreMostrado }}</td>
+                    <td>
+                        <div class="producto-wrapper" @mouseenter="onProductoHover" @mouseleave="onProductoLeave">
+                            <span class="producto-text">{{ nombreMostrado }}</span>
+                        </div>
+                    </td>
                     <td>${{  precioVenta.toFixed(2) }}</td>
                     <td>
                         <input
@@ -258,5 +281,30 @@ const agregarProducto = () => {
 
     cotizacionStore.limpiarProductoBusqueda()
     piezas.value = 1;
+}
+
+const onProductoHover = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.classList.add('is-scrolling')
+
+    const overflow = text.scrollWidth - wrapper.clientWidth
+    if (overflow > 0) {
+        const duration = Math.max(1, overflow / 40)
+        text.style.transition = `transform ${duration}s linear`
+        text.style.transform = `translateX(-${overflow}px)`
+    } else {
+        text.classList.remove('is-scrolling')
+    }
+}
+
+const onProductoLeave = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.style.transform = 'translateX(0)'
+    text.addEventListener('transitionend', () => {
+        text.classList.remove('is-scrolling')
+        text.style.transition = ''
+    }, { once: true })
 }
 </script>

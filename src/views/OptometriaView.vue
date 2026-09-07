@@ -83,9 +83,14 @@
                     @paciente-seleccionado="pacienteSeleccionado = $event"
                     @paciente-creado="cargarPacientes(clienteSeleccionado.id)"
                 />
-                <NotebookComponent
+                <Exploraciones
                     v-if="pacienteSeleccionado"
                     :paciente="pacienteSeleccionado"
+                />
+                <InfoReferencial
+                    v-if="pacienteSeleccionado"
+                    :paciente="pacienteSeleccionado"
+                    :cliente-id="clienteSeleccionado?.id"
                 />
             </div>
         </div>
@@ -94,13 +99,14 @@
 
 <script setup>
 import {ref} from 'vue'
-import { authHeaders } from '../services/authHeader'
+import { getPacientesByCliente } from '../services/PacientesServices'
 import Header from '../components/Header.vue'
 import NavBar from '../components/NavBar.vue'
 import ClienteBar from '../components/CLienteBar.vue'
 import DataClient from '../components/optometriaview/DataClient.vue'
 import PacientesListComponent from '../components/optometriaview/PacientesList.vue'
-import NotebookComponent from '../components/optometriaview/NotebookClient.vue'
+import Exploraciones from '../components/optometriaview/Exploraciones.vue'
+import InfoReferencial from '../components/optometriaview/InfoReferencial.vue'
 
 const clienteSeleccionado = ref(null)
 const pacientes = ref([])
@@ -130,8 +136,7 @@ const onLimpiarBusqueda = () => {
 const cargarPacientes = async (clienteId) => {
     isLoadingPacientes.value = true
     try {
-        const res = await fetch(`http://127.0.0.1:8000/pacientes/cliente/${clienteId}`, { headers: authHeaders() })
-        pacientes.value = await res.json()
+        pacientes.value = await getPacientesByCliente(clienteId)
     } catch (e) {
         pacientes.value = []
     } finally {
