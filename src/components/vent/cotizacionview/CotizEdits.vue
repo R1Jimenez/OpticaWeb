@@ -391,7 +391,7 @@ tbody td {
                     <td>
                         <button class="Cobr" :disabled="enviandoCotizacion" @click="cobrar">
                             <span class="material-icons">attach_money</span>
-                            <span>{{ enviandoCotizacion ? 'Enviando...' : 'Cobrar' }}</span>
+                            <span>{{ enviandoCotizacion ? 'Enviando' : 'Cobrar' }}</span>
                         </button>
                     </td>
                 </tr>
@@ -463,12 +463,24 @@ const quitarProducto = (item) => {
     cotizacionStore.quitarItem(item)
 }
 
-const imprimirMuestra = () => {
+const imprimirMuestra = (folio = null) => {
     const ventana = window.open('', '_blank')
     if (!ventana) return
 
+    const esTicketReal = !!folio
     const descuentoPct = cotizacionStore.descuentoPorcentaje || 0
-    const ahorroTotal = cotizacionStore.totalNormal - cotizacionStore.totalVenta
+    const totalNormalVal = totalNormalSeguro.value
+    const totalVentaVal = totalVentaSeguro.value
+    const ahorroTotal = ahorro.value
+    const pagoInicialVal = Number(cotizacionStore.pagoInicial) || 0
+    const pagoRestanteVal = totalVentaVal - pagoInicialVal
+
+    const cliente = cotizacionStore.clienteSeleccionado
+    const direccionCliente = cliente
+        ? `${cliente.calle} ${cliente.numero}, ${cliente.colonia}, ${cliente.ciudad}, ${cliente.estado}, CP ${cliente.codigopostal}`
+        : 'N/A'
+    const tipoClienteNombre = cotizacionStore.tipoClienteSeleccionado?.cliente || 'N/A'
+    const plazoNombre = cotizacionStore.plazoSeleccionado?.plazo || 'N/A'
 
     const filas = cotizacionStore.items.map(item => {
         const precioUnit = Number(item.precio?.precio || 0)
@@ -487,10 +499,27 @@ const imprimirMuestra = () => {
         `
     }).join('')
 
+    const bloqueClienteExtendido = esTicketReal ? `
+        <p>Tipo Cliente: ${tipoClienteNombre}</p>
+        <p>Nombre: ${nombreCliente.value || 'N/A'}</p>
+        <p>Dirección: ${direccionCliente}</p>
+        <p>Teléfono: ${cliente?.telefono || 'N/A'}</p>
+        <hr>
+    ` : `
+        <p>Cliente: ${nombreCliente.value || 'N/A'}</p>
+    `
+
+    const bloquePago = esTicketReal ? `
+        <hr>
+        <p>Plazo: ${plazoNombre}</p>
+        <p>Pago Inicial: $${pagoInicialVal.toFixed(2)}</p>
+        <p>Pago Restante: $${pagoRestanteVal.toFixed(2)}</p>
+    ` : ''
+
     ventana.document.write(`
         <html>
         <head>
-            <title>Cotización Muestra</title>
+            <title>${folio ? `Cotización #${folio}` : 'Cotización Muestra'}</title>
             <style>
                 @page {
                     size: 80mm auto;
@@ -549,14 +578,14 @@ const imprimirMuestra = () => {
         </head>
         <body>
             <h2>Visual Optics</h2>
-            <h2>Cotización Muestra</h2>
-            <p style="text-align:center;">(sin validez fiscal)</p>
+            <h2>${folio ? `Cotización #${folio}` : 'Cotización Muestra'}</h2>
+            ${!esTicketReal ? `<p style="text-align:center;">(sin validez fiscal)</p>` : ''}
             <hr>
             <p>Sucursal: ${sucursalNombre.value}</p>
             <p>Fecha: ${fechaTicket.value}</p>
             <p>Vendedor: ${vendedorNombre.value}</p>
             <hr>
-            <p>Cliente: ${nombreCliente.value || 'N/A'}</p>
+            ${bloqueClienteExtendido}
             <p>Paciente: ${nombrePaciente.value || 'N/A'}</p>
             <hr>
             <table>
@@ -572,9 +601,11 @@ const imprimirMuestra = () => {
                 <tbody>${filas}</tbody>
             </table>
             <hr>
-            <p>Total Normal: $${cotizacionStore.totalNormal.toFixed(2)}</p>
+            <p>Total Normal: $${totalNormalVal.toFixed(2)}</p>
             <p class="ahorro">Descuento (${descuentoPct}%): -$${ahorroTotal.toFixed(2)}</p>
-            <p class="total">Total: $${cotizacionStore.totalVenta.toFixed(2)}</p>
+            <p class="total">Total: $${totalVentaVal.toFixed(2)}</p>
+            ${bloquePago}
+            <hr>
             <p class="footer">Visual Optics</p>
             <p class="footer">Despues de 60 dias, no nos hacemos</p>
             <p class="footer">responsables por ningun trabajo.</p>
@@ -596,9 +627,9 @@ const cobrar = async () => {
     enviandoCotizacion.value = true
     try {
         const cotizacion = await cotizacionStore.crearCotizacion()
+        imprimirMuestra(cotizacion.id)
         cotizacionStore.limpiarItems()
         cotizacionStore.setPagoInicial(0)
-        alert(`Cotización #${cotizacion.id} creada correctamente. Total: $${Number(cotizacion.total_venta).toFixed(2)}`)
     } catch (error) {
         errorCobro.value = error.message
     } finally {

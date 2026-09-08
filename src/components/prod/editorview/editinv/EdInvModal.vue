@@ -300,10 +300,8 @@
     <div class="EdInvModal">
             <div class="HeadEdInv">
                 <span>Edición de Inventario</span>
-                <button class="guar">
-                    <span class="material-icons">
-                        save
-                    </span>
+                <button class="guar" @click="emit('guardar')">
+                    <span class="material-icons">save</span>
                     <span>Guardar</span>
                 </button>
             </div>
@@ -445,7 +443,7 @@ import { ProductosService } from '../../../../services/ProductosServices'
 import { useSucursalStore } from '../../../../stores/sucursal'
 import { useInventarioEdicionStore } from '../../../../stores/inventarioEdicion'
 
-const emit = defineEmits(['consultar'])
+const emit = defineEmits(['consultar', 'guardar'])
 
 const inventarioStore = useInventarioEdicionStore()
 

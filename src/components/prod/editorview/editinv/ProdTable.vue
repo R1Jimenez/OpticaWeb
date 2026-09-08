@@ -266,7 +266,7 @@ tbody td:nth-child(2) {
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ProductosService } from '../../../../services/ProductosServices'
-import { getInventarioSucursalProducto } from '../../../../services/InventarioServices'
+import { getInventarioSucursalProducto, updateInventario, registrarMovimiento } from '../../../../services/InventarioServices'
 import { getSucursales } from '../../../../services/SucursalesServices'
 import { useInventarioEdicionStore } from '../../../../stores/inventarioEdicion'
 
@@ -275,7 +275,10 @@ const inventarioStore = useInventarioEdicionStore()
 const producto = ref(null)
 const sucursalesCache = ref([])
 const isLoading = ref(false)
+const isGuardando = ref(false)
 const errorMessage = ref(null)
+
+const inventarioId = ref(null)
 
 const puntoReorden = ref(0)
 const existenciaActual = ref(0)
@@ -336,6 +339,7 @@ const cargarInventario = async () => {
         ])
 
         producto.value = productoData
+        inventarioId.value = inventarioData.id
         puntoReorden.value = inventarioData.punto_reorden ?? 0
         existenciaActual.value = inventarioData.existencia_actual ?? 0
         entrada.value = 0
@@ -349,6 +353,44 @@ const cargarInventario = async () => {
     }
 }
 
+const guardarCambios = async () => {
+    if (!inventarioId.value) {
+        errorMessage.value = 'No hay inventario cargado para guardar'
+        return false
+    }
+
+    const sucursalId = inventarioStore.sucursalId
+    const productoId = inventarioStore.productoId
+    const entradaNum = Number(entrada.value) || 0
+    const mermaNum = Number(merma.value) || 0
+
+    isGuardando.value = true
+    errorMessage.value = null
+    try {
+        await updateInventario(inventarioId.value, {
+            punto_reorden: Number(puntoReorden.value) || 0,
+        })
+
+        if (entradaNum !== 0 || mermaNum !== 0) {
+            await registrarMovimiento({
+                sucursal_id: sucursalId,
+                producto_id: productoId,
+                entrada: entradaNum,
+                merma: mermaNum,
+            })
+        }
+
+        await cargarInventario()
+        return true
+    } catch (e) {
+        errorMessage.value = `Error al guardar: ${e.message}`
+        console.error(e)
+        return false
+    } finally {
+        isGuardando.value = false
+    }
+}
+
 onMounted(async () => {
     try {
         sucursalesCache.value = await getSucursales()
@@ -358,5 +400,5 @@ onMounted(async () => {
     cargarInventario()
 })
 
-defineExpose({ consultar: cargarInventario })
+defineExpose({ consultar: cargarInventario, guardar: guardarCambios })
 </script>

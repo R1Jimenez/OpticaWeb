@@ -16,7 +16,7 @@
 
 <template>
     <div class="EdInvMod" @click.self="$emit('CerrInv')">
-        <EdInvModal @consultar="onConsultar" />
+        <EdInvModal @consultar="onConsultar" @guardar="onGuardar" />
         <ProdTable ref="prodTableRef" />
     </div>
 </template>
@@ -36,7 +36,6 @@ defineEmits(['CerrInv'])
 const sucursalStore = useSucursalStore()
 const inventarioEdicionStore = useInventarioEdicionStore()
 
-// arranca el store con el producto seleccionado y la sucursal activa del header
 inventarioEdicionStore.setProducto(props.productoId)
 inventarioEdicionStore.setSucursal(sucursalStore.sucursalSeleccionada?.id ?? null)
 
@@ -44,5 +43,12 @@ const prodTableRef = ref(null)
 
 const onConsultar = () => {
     prodTableRef.value?.consultar()
+}
+
+const onGuardar = async () => {
+    const exito = await prodTableRef.value?.guardar()
+    if (exito) {
+        alert('Inventario actualizado correctamente')
+    }
 }
 </script>

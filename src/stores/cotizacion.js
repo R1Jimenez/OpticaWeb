@@ -14,6 +14,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
     const pagoInicial = ref(0)
     const items = ref([])
     const descuentoPorcentaje = ref(0)
+    const tipoClienteSeleccionado = ref(null)
 
     const totalNormal = computed(() => items.value.reduce((acc, item) => {
         const precio = Number(item.precio?.precio) || 0
@@ -24,15 +25,18 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
     const totalVenta = computed(() => totalNormal.value - (totalNormal.value * descuentoPorcentaje.value / 100))
 
     async function cargarDescuentoCliente(cliente) {
+    descuentoPorcentaje.value = 0
+    tipoClienteSeleccionado.value = null
+    if (!cliente?.tipocliente) return
+    try {
+        const tipoCliente = await getTipoCliente(cliente.tipocliente)
+        tipoClienteSeleccionado.value = tipoCliente
+        descuentoPorcentaje.value = Number(tipoCliente?.porcentaje_descuento) || 0
+    } catch {
         descuentoPorcentaje.value = 0
-        if (!cliente?.tipocliente) return
-        try {
-            const tipoCliente = await getTipoCliente(cliente.tipocliente)
-            descuentoPorcentaje.value = Number(tipoCliente?.porcentaje_descuento) || 0
-        } catch {
-            descuentoPorcentaje.value = 0
-        }
+        tipoClienteSeleccionado.value = null
     }
+}
 
     function setCliente(cliente) {
         clienteSeleccionado.value = cliente
@@ -44,6 +48,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         clienteSeleccionado.value = null
         pacienteSeleccionado.value = null
         descuentoPorcentaje.value = 0
+        tipoClienteSeleccionado.value = null
     }
 
     function setPaciente(paciente) {
