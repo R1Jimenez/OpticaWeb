@@ -1,7 +1,8 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
 import { createCotizacion, getTicketPdf } from '../services/CotizacionServices'
+import { getTipoCliente } from '../services/TipoClienteServices'
 
 export const useCotizacionStore = defineStore('cotizacion', () => {
     const clienteSeleccionado = ref(null)
@@ -12,15 +13,37 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
     const productoBusqueda = ref(null)
     const pagoInicial = ref(0)
     const items = ref([])
+    const descuentoPorcentaje = ref(0)
+
+    const totalNormal = computed(() => items.value.reduce((acc, item) => {
+        const precio = Number(item.precio?.precio) || 0
+        const piezas = Number(item.piezas) || 0
+        return acc + precio * piezas
+    }, 0))
+
+    const totalVenta = computed(() => totalNormal.value - (totalNormal.value * descuentoPorcentaje.value / 100))
+
+    async function cargarDescuentoCliente(cliente) {
+        descuentoPorcentaje.value = 0
+        if (!cliente?.tipocliente) return
+        try {
+            const tipoCliente = await getTipoCliente(cliente.tipocliente)
+            descuentoPorcentaje.value = Number(tipoCliente?.porcentaje_descuento) || 0
+        } catch {
+            descuentoPorcentaje.value = 0
+        }
+    }
 
     function setCliente(cliente) {
         clienteSeleccionado.value = cliente
         pacienteSeleccionado.value = null
+        cargarDescuentoCliente(cliente)
     }
 
     function limpiarCliente() {
         clienteSeleccionado.value = null
         pacienteSeleccionado.value = null
+        descuentoPorcentaje.value = 0
     }
 
     function setPaciente(paciente) {
@@ -89,7 +112,6 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
             })),
         }
 
-        // el backend requiere todos estos campos (no aceptan null)
         const faltantes = ['sucursal_id', 'usuario_id', 'id_cliente', 'id_paciente', 'tipo_venta', 'plazo']
             .filter(campo => payload[campo] === null || payload[campo] === undefined)
         if (faltantes.length > 0) {
@@ -123,6 +145,9 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         productoBusqueda,
         pagoInicial,
         items,
+        descuentoPorcentaje,
+        totalNormal,
+        totalVenta,
         setCliente,
         limpiarCliente,
         setPaciente,

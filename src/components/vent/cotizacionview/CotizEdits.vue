@@ -359,8 +359,8 @@ tbody td {
             <tbody>
                 <tr>
                     <td></td>
-                    <td>${{ cotizacionStore.totalNormal.toFixed(2) }}</td>
-                    <td>${{ cotizacionStore.totalVenta.toFixed(2) }}</td>
+                    <td>${{ totalNormalSeguro.toFixed(2) }}</td>
+                    <td>${{ totalVentaSeguro.toFixed(2) }}</td>
                     <td>
                         <button class="accept" @click="imprimirMuestra">
                             <span>Imprimir Cotización Muestra</span>
@@ -417,6 +417,11 @@ const isLoadingPacientes = ref(false)
 const mostrarDropdownPacientes = ref(false)
 const enviandoCotizacion = ref(false)
 const errorCobro = ref(null)
+
+const totalNormalSeguro = computed(() => Number(cotizacionStore.totalNormal) || 0)
+const totalVentaSeguro = computed(() => Number(cotizacionStore.totalVenta) || 0)
+
+const ahorro = computed(() => totalNormalSeguro.value - totalVentaSeguro.value)
 
 const nombreCliente = computed(() => {
     const cliente = cotizacionStore.clienteSeleccionado
@@ -657,7 +662,8 @@ const onProductoLeave = (event) => {
     }, { once: true })
 }
 
-const ahorro = computed(() => {
-    return cotizacionStore.totalNormal - cotizacionStore.totalVenta
-})
+watch(() => cotizacionStore.items, (items) => {
+    console.log('items:', items)
+    console.log('totalNormal crudo:', cotizacionStore.totalNormal)
+}, { deep: true })
 </script>
