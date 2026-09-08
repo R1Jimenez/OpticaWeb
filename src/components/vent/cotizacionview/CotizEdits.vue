@@ -343,10 +343,10 @@ tbody td {
         </table>
         <table>
             <colgroup>
-                <col style="width: 78%;">
+                <col style="width: 69%;">
                 <col style="width: 8%;">
                 <col style="width: 8%;">
-                <col style="width: 6%;">
+                <col style="width: 15%;">
             </colgroup>
             <thead>
                 <tr>
@@ -359,8 +359,8 @@ tbody td {
             <tbody>
                 <tr>
                     <td></td>
-                    <td>$100.00</td>
-                    <td>$200.00</td>
+                    <td>${{ cotizacionStore.totalNormal.toFixed(2) }}</td>
+                    <td>${{ cotizacionStore.totalVenta.toFixed(2) }}</td>
                     <td>
                         <button class="accept" @click="imprimirMuestra">
                             <span>Imprimir Cotización Muestra</span>
@@ -382,12 +382,10 @@ tbody td {
                     <td>Ahorro:</td>
                     <td>
                         <input
-                            type="double"
-                            placeholder="0"
+                            type="text"
                             class="CliBarEdInv"
-                            v-model="nombreQuery"
-                            autocomplete="off"
-                            @keyup.enter="buscarProducto"
+                            :value="`$${ahorro.toFixed(2)}`"
+                            readonly
                         />
                     </td>
                     <td>
@@ -407,10 +405,12 @@ tbody td {
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useAuthStore } from '../../../stores/auth'
 import { useCotizacionStore } from '../../../stores/cotizacion'
 import { getPacientesByCliente } from '../../../services/PacientesServices'
 
 const cotizacionStore = useCotizacionStore()
+const authStore = useAuthStore()
 
 const pacientes = ref([])
 const isLoadingPacientes = ref(false)
@@ -430,6 +430,28 @@ const nombrePaciente = computed(() => {
     return `${paciente.nombres} ${paciente.apellidos}`
 })
 
+const sucursalNombre = computed(() => {
+    return cotizacionStore.sucursalSeleccionada?.nombre || 'N/A'
+})
+
+const vendedorNombre = computed(() => {
+    const u = authStore.user?.user ?? authStore.user
+    if (!u) return 'N/A'
+    if (u.nombres) return `${u.nombres} ${u.apellidos || ''}`.trim()
+    return u.nombre || u.usuario || u.username || 'N/A'
+})
+
+const fechaTicket = computed(() => {
+    return new Date().toLocaleString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    })
+})
+
 const totalItem = (item) => Number(item.precio?.precio || 0) * item.piezas
 
 const quitarProducto = (item) => {
@@ -440,39 +462,122 @@ const imprimirMuestra = () => {
     const ventana = window.open('', '_blank')
     if (!ventana) return
 
-    const totalNormal = cotizacionStore.items.reduce((acc, item) => acc + totalItem(item), 0)
-    const filas = cotizacionStore.items.map(item => `
-        <tr>
-            <td>${item.producto.nombre}</td>
-            <td>${item.piezas}</td>
-            <td>$${Number(item.precio?.precio || 0).toFixed(2)}</td>
-            <td>$${totalItem(item).toFixed(2)}</td>
-        </tr>
-    `).join('')
+    const descuentoPct = cotizacionStore.descuentoPorcentaje || 0
+    const ahorroTotal = cotizacionStore.totalNormal - cotizacionStore.totalVenta
+
+    const filas = cotizacionStore.items.map(item => {
+        const precioUnit = Number(item.precio?.precio || 0)
+        const descuentoUnit = precioUnit * descuentoPct / 100
+        const precioConDescuento = precioUnit - descuentoUnit
+        const subtotal = precioConDescuento * item.piezas
+
+        return `
+            <tr>
+                <td>${item.piezas}</td>
+                <td>${item.producto.nombre}</td>
+                <td>$${precioUnit.toFixed(2)}</td>
+                <td>$${descuentoUnit.toFixed(2)}</td>
+                <td>$${subtotal.toFixed(2)}</td>
+            </tr>
+        `
+    }).join('')
 
     ventana.document.write(`
         <html>
         <head>
             <title>Cotización Muestra</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                h2 { margin-bottom: 0; }
-                table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-                th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 0.9rem; }
-                .total { text-align: right; font-weight: bold; margin-top: 10px; }
+                @page {
+                    size: 80mm auto;
+                    margin: 0;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    width: 80mm;
+                    margin: 0;
+                    padding: 4mm;
+                    font-family: 'Courier New', monospace;
+                    font-size: 11px;
+                    color: #000;
+                }
+                h2 {
+                    margin: 0 0 4px 0;
+                    font-size: 13px;
+                    text-align: center;
+                }
+                p {
+                    margin: 2px 0;
+                }
+                hr {
+                    border: none;
+                    border-top: 1px dashed #000;
+                    margin: 6px 0;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 6px;
+                }
+                th, td {
+                    padding: 2px 0;
+                    font-size: 10px;
+                    text-align: left;
+                }
+                th {
+                    border-bottom: 1px dashed #000;
+                }
+                .pz, .pu, .sub {
+                    text-align: right;
+                }
+                .total, .ahorro {
+                    text-align: right;
+                    font-weight: bold;
+                    margin-top: 4px;
+                    font-size: 12px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 8px;
+                    font-size: 10px;
+                }
             </style>
         </head>
         <body>
-            <h2>Cotización Muestra (sin validez fiscal)</h2>
+            <h2>Visual Optics</h2>
+            <h2>Cotización Muestra</h2>
+            <p style="text-align:center;">(sin validez fiscal)</p>
+            <hr>
+            <p>Sucursal: ${sucursalNombre.value}</p>
+            <p>Fecha: ${fechaTicket.value}</p>
+            <p>Vendedor: ${vendedorNombre.value}</p>
+            <hr>
             <p>Cliente: ${nombreCliente.value || 'N/A'}</p>
             <p>Paciente: ${nombrePaciente.value || 'N/A'}</p>
+            <hr>
             <table>
                 <thead>
-                    <tr><th>Producto</th><th>Piezas</th><th>Precio</th><th>Subtotal</th></tr>
+                    <tr>
+                        <th>Cant.</th>
+                        <th>Prod.</th>
+                        <th class="pz">Precio Unit</th>
+                        <th class="pu">Desc. Unit.</th>
+                        <th class="sub">Subt.</th>
+                    </tr>
                 </thead>
                 <tbody>${filas}</tbody>
             </table>
-            <p class="total">Total: $${totalNormal.toFixed(2)}</p>
+            <hr>
+            <p>Total Normal: $${cotizacionStore.totalNormal.toFixed(2)}</p>
+            <p class="ahorro">Descuento (${descuentoPct}%): -$${ahorroTotal.toFixed(2)}</p>
+            <p class="total">Total: $${cotizacionStore.totalVenta.toFixed(2)}</p>
+            <p class="footer">Visual Optics</p>
+            <p class="footer">Despues de 60 dias, no nos hacemos</p>
+            <p class="footer">responsables por ningun trabajo.</p>
+            <p class="footer">Ordenado el trabajo, no se admiten</p>
+            <p class="footer">cancelaciones ni devoluciones.</p>
+            <p class="footer">Gracias por su preferencia.</p>
+            <p class="footer">Aviso de privacidad disponible en nuestra</p>
+            <p class="footer">página web.</p>
         </body>
         </html>
     `)
@@ -551,4 +656,8 @@ const onProductoLeave = (event) => {
         text.style.transition = ''
     }, { once: true })
 }
+
+const ahorro = computed(() => {
+    return cotizacionStore.totalNormal - cotizacionStore.totalVenta
+})
 </script>
