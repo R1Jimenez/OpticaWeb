@@ -7,7 +7,7 @@
     width: 100%;
     padding: .5%;
     padding-top: 1%;
-    padding-bottom: 0%;
+    padding-bottom: 1%;
     gap: 1.5%;
 }
 
@@ -57,7 +57,7 @@
         <Header />
         <div class="Optometriacontenido">
             <NavBar />
-            <div class="OptometriaUsages" :class="{ scrollable: pacienteSeleccionado }">
+            <div class="OptometriaUsages" :class="{ scrollable: clienteSeleccionado }">
                 <div class="OptoTituloRow">
                     <h1 class="TextoTituloOP">
                         Expediente de Optometria
@@ -71,6 +71,8 @@
                     @clienteEliminado="onClienteEliminado"
                     @limpiarBusqueda="onLimpiarBusqueda"
                 />
+
+                <OrdenesTrabajo :cliente-id="clienteSeleccionado?.id" />
 
                 <div v-if="isLoadingPacientes" style="color:white; text-align:center; padding: 20px">
                     Cargando Pacientes...
@@ -107,6 +109,7 @@ import DataClient from '../components/optometriaview/DataClient.vue'
 import PacientesListComponent from '../components/optometriaview/PacientesList.vue'
 import Exploraciones from '../components/optometriaview/Exploraciones.vue'
 import InfoReferencial from '../components/optometriaview/InfoReferencial.vue'
+import OrdenesTrabajo from '../components/optometriaview/OrdenesTrabajo.vue'
 
 const clienteSeleccionado = ref(null)
 const pacientes = ref([])

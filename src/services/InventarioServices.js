@@ -35,7 +35,7 @@ export async function updateInventario(inventarioId, payload) {
 }
 
 export async function getInventarioSucursal(sucursalId) {
-    const res = await fetch(`${API_BASE}/inventario/sucursal/${sucursalId}`, {
+    const res = await fetch(`${API_BASE}/inventario/sucursal/${sucursalId}/productos`, {
         headers: authHeaders(),
     })
     return handleResponse(res, 'Error al cargar el inventario de la sucursal')

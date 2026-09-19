@@ -131,6 +131,13 @@
     font-size: 1rem;
     font-weight: 500;
 }
+
+.InventProdConsButton:hover {
+    background-color: #F0F0F0;
+    border: 1px solid #130348;
+    color: #130348;
+    cursor: pointer;
+}
 </style>
 
 <template>
@@ -146,8 +153,9 @@
                 type="text"
                 placeholder="Consultar Producto"
                 class="InventProdbar"
-                v-model="searchQuery"
+                v-model="nombreQuery"
                 autocomplete="off"
+                @keyup.enter="consultar"
             />
         </div>
         <div class="InventRowEdits">
@@ -156,23 +164,24 @@
                     Código:
                 </text>
                 <input
-                    type=int
+                    type="text"
                     placeholder="Codigo Producto"
                     class="InventCodeBar"
-                    v-model="searchQuery"
+                    v-model="codigoQuery"
                     autocomplete="off"
+                    @keyup.enter="consultar"
                 />
             </div>
             <div class="InventEstRow">
                 <text>
                     Estatus:
                 </text>
-                <div class="InventAcMenu">
-                    <text>Activo</text>
+                <div class="InventAcMenu" @click="ciclarEstatus">
+                    <text>{{ estatusSeleccionado.label }}</text>
                     <span class="material-icons" style="color:#130348; font-size:25px;">arrow_drop_down</span>
                 </div>
             </div>
-            <button class="InventProdConsButton">
+            <button class="InventProdConsButton" @click="consultar">
                 Consultar
             </button>
         </div>
@@ -180,5 +189,34 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
+import { useSucursalStore } from '../../../stores/sucursal'
+import { useInventarioProductosStore } from '../../../stores/inventarioProductos'
 
+const sucursalStore = useSucursalStore()
+const inventarioStore = useInventarioProductosStore()
+
+const nombreQuery = ref('')
+const codigoQuery = ref('')
+
+const estatusOpciones = [
+    { id: 1, label: 'Activo' },
+    { id: 2, label: 'Inactivo' },
+    { id: null, label: 'Todos' },
+]
+const estatusIndex = ref(0)
+const estatusSeleccionado = computed(() => estatusOpciones[estatusIndex.value])
+
+const ciclarEstatus = () => {
+    estatusIndex.value = (estatusIndex.value + 1) % estatusOpciones.length
+}
+
+const consultar = () => {
+    inventarioStore.setFiltros({
+        nombre: nombreQuery.value.trim(),
+        codigo: codigoQuery.value.trim(),
+        estatus: estatusSeleccionado.value.id,
+    })
+    inventarioStore.cargarProductos(sucursalStore.sucursalSeleccionada?.id)
+}
 </script>

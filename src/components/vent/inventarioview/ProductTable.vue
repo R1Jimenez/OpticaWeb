@@ -3,7 +3,7 @@
     width: 98%;
     background: white;
     border: 2px solid #FB1C2E;
-    border-radius: 8px;
+    border-radius: 22px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     margin-bottom: 20px;
@@ -62,9 +62,46 @@
 .InventbodyT td {
     padding: 10px;
     font-size: 1rem;
+    font-weight: 550;
     color: #130348;
     white-space: nowrap;
     border: 1px solid #130348;   
+}
+
+.producto-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.producto-text {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+.producto-text.is-scrolling {
+    max-width: none;
+    text-overflow: clip;
+}
+
+.codebox {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 3px;
+    width: 95%;
+    background: radial-gradient(
+        ellipse at center,
+        #130348 10%,
+        #07072C 100%
+    );
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 550;
+    color: white;
 }
 </style>
 
@@ -72,7 +109,7 @@
     <div class="InventTablPrincipal">
         <div class="InventProdsHeader">
             <span>
-                Mostrando Productos disponibles
+                Mostrando Productos disponibles{{ sucursalStore.sucursalSeleccionada?.nombre ? ` - ${sucursalStore.sucursalSeleccionada.nombre}` : '' }}
             </span>
         </div>
         <div class="InventHeadProd">
@@ -96,13 +133,31 @@
                     </tr>
                 </thead>
                 <tbody class="InventbodyT">
-                    <tr>
+                    <tr v-if="inventarioStore.isLoading">
+                        <td colspan="6">Cargando inventario...</td>
+                    </tr>
+                    <tr v-else-if="inventarioStore.productos.length === 0">
+                        <td colspan="6">Sin productos disponibles</td>
+                    </tr>
+                    <tr v-for="item in inventarioStore.productos" :key="item.id">
                         <td> </td>
-                        <td>0100130001600000176</td>
-                        <td>ENHANCE EN 3858 CABALLERO~COMPLETO METAL</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>X</td>
+                        <td>
+                            <div class="codebox">
+                                {{ item.producto.codigo }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="producto-wrapper" @mouseenter="onProductoHover" @mouseleave="onProductoLeave">
+                                <span class="producto-text">{{ item.producto.nombre }}</span>
+                            </div>
+                        </td>
+                        <td>{{ item.existencia_actual }}</td>
+                        <td>{{ item.punto_reorden }}</td>
+                        <td>
+                            <span class="material-icons" style="font-size:20px; color:#130348;">
+                                {{ item.producto.estatus === 1 ? 'check' : 'close' }}
+                            </span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -111,5 +166,42 @@
 </template>
 
 <script setup>
+import { onMounted, watch } from 'vue'
+import { useSucursalStore } from '../../../stores/sucursal'
+import { useInventarioProductosStore } from '../../../stores/inventarioProductos'
 
+const sucursalStore = useSucursalStore()
+const inventarioStore = useInventarioProductosStore()
+
+const cargarInventario = () => {
+    inventarioStore.cargarProductos(sucursalStore.sucursalSeleccionada?.id)
+}
+
+onMounted(cargarInventario)
+watch(() => sucursalStore.sucursalSeleccionada?.id, cargarInventario)
+
+const onProductoHover = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.classList.add('is-scrolling')
+
+    const overflow = text.scrollWidth - wrapper.clientWidth
+    if (overflow > 0) {
+        const duration = Math.max(1, overflow / 40)
+        text.style.transition = `transform ${duration}s linear`
+        text.style.transform = `translateX(-${overflow}px)`
+    } else {
+        text.classList.remove('is-scrolling')
+    }
+}
+
+const onProductoLeave = (event) => {
+    const wrapper = event.currentTarget
+    const text = wrapper.querySelector('.producto-text')
+    text.style.transform = 'translateX(0)'
+    text.addEventListener('transitionend', () => {
+        text.classList.remove('is-scrolling')
+        text.style.transition = ''
+    }, { once: true })
+}
 </script>

@@ -3,6 +3,7 @@
     position: relative;
     width: 93%;
     margin-top: 20px;
+    flex-shrink: 0;
 }
 
 .pacientes-container {
@@ -74,7 +75,7 @@
 
 /* ── Lista ── */
 .pacientes-list {
-    max-height: 250px;
+    max-height: 420px;
     overflow-y: auto;
 }
 

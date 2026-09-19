@@ -247,6 +247,51 @@ tbody td {
     text-align: left;
 }
 
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.modalEntrega {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 320px;
+    padding: 20px 24px;
+    background: radial-gradient(
+        #F0F0F0 10%,
+        #BCBCBC 100%
+    );
+    border: solid 2px #FB1C2E;
+    border-radius: 22px;
+}
+
+.modalEntrega h3 {
+    margin: 0;
+    color: #130348;
+    text-align: center;
+}
+
+.modalEntregaBotones {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.modalEntregaBotones button {
+    flex: 1;
+}
+
 .Cobr:hover {
     background: radial-gradient(
         #F0F0F0 10%,
@@ -389,7 +434,7 @@ tbody td {
                         />
                     </td>
                     <td>
-                        <button class="Cobr" :disabled="enviandoCotizacion" @click="cobrar">
+                        <button class="Cobr" :disabled="enviandoCotizacion" @click="abrirModalEntrega">
                             <span class="material-icons">attach_money</span>
                             <span>{{ enviandoCotizacion ? 'Enviando' : 'Cobrar' }}</span>
                         </button>
@@ -400,6 +445,19 @@ tbody td {
                 </tr>
             </tbody>
         </table>
+        <div class="modalOverlay" v-if="mostrarModalEntrega">
+            <div class="modalEntrega">
+                <h3>Fecha de Entrega</h3>
+                <input type="date" class="CliBarEdInv" v-model="fechaEntrega" />
+                <span v-if="errorFechaEntrega" class="errorCobro">{{ errorFechaEntrega }}</span>
+                <div class="modalEntregaBotones">
+                    <button class="Eliminar" @click="cerrarModalEntrega">Cancelar</button>
+                    <button class="accept" :disabled="enviandoCotizacion" @click="cobrar">
+                        <span>{{ enviandoCotizacion ? 'Enviando' : 'Confirmar' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -417,6 +475,9 @@ const isLoadingPacientes = ref(false)
 const mostrarDropdownPacientes = ref(false)
 const enviandoCotizacion = ref(false)
 const errorCobro = ref(null)
+const mostrarModalEntrega = ref(false)
+const fechaEntrega = ref('')
+const errorFechaEntrega = ref(null)
 
 const totalNormalSeguro = computed(() => Number(cotizacionStore.totalNormal) || 0)
 const totalVentaSeguro = computed(() => Number(cotizacionStore.totalVenta) || 0)
@@ -514,6 +575,7 @@ const imprimirMuestra = (folio = null) => {
         <p>Plazo: ${plazoNombre}</p>
         <p>Pago Inicial: $${pagoInicialVal.toFixed(2)}</p>
         <p>Pago Restante: $${pagoRestanteVal.toFixed(2)}</p>
+        <p>Promesa de Entrega: ${fechaEntrega.value || 'N/A'}</p>
     ` : ''
 
     ventana.document.write(`
@@ -622,11 +684,29 @@ const imprimirMuestra = (folio = null) => {
     ventana.print()
 }
 
+const abrirModalEntrega = () => {
+    errorCobro.value = null
+    errorFechaEntrega.value = null
+    fechaEntrega.value = ''
+    mostrarModalEntrega.value = true
+}
+
+const cerrarModalEntrega = () => {
+    mostrarModalEntrega.value = false
+    errorFechaEntrega.value = null
+}
+
 const cobrar = async () => {
+    if (!fechaEntrega.value) {
+        errorFechaEntrega.value = 'Seleccione una fecha de entrega'
+        return
+    }
+    errorFechaEntrega.value = null
     errorCobro.value = null
     enviandoCotizacion.value = true
     try {
-        const cotizacion = await cotizacionStore.crearCotizacion()
+        const cotizacion = await cotizacionStore.crearCotizacion(fechaEntrega.value)
+        mostrarModalEntrega.value = false
         imprimirMuestra(cotizacion.id)
         cotizacionStore.limpiarItems()
         cotizacionStore.setPagoInicial(0)

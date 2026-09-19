@@ -40,7 +40,7 @@
 </style>
 
 <template>
-    <div class="DetalleTitulo">TERRAZAS AMBERLYN</div>
+    <div class="DetalleTitulo">{{ nombrePaciente }}</div>
         <table class="MiniTablaPaciente">
             <thead>
                 <tr>
@@ -52,23 +52,27 @@
             <tbody>
                 <tr>
                     <td class="EtiquetaFila">Esfera</td>
-                    <td>-0.5</td>
-                    <td>-0.5</td>
+                    <td>{{ oi.esfera }}</td>
+                    <td>{{ od.esfera }}</td>
                 </tr>
                 <tr>
                     <td class="EtiquetaFila">Cilindro</td>
-                    <td>-0.75</td>
-                    <td>-0.5</td>
+                    <td>{{ oi.cilindro }}</td>
+                    <td>{{ od.cilindro }}</td>
                 </tr>
                 <tr>
                     <td class="EtiquetaFila">Eje</td>
-                    <td>85</td>
-                    <td>90</td>
+                    <td>{{ oi.eje }}</td>
+                    <td>{{ od.eje }}</td>
                 </tr>
             </tbody>
         </table>
 </template>
 
 <script setup>
-
+defineProps({
+    nombrePaciente: { type: String, default: 'TERRAZAS AMBERLYN' },
+    oi: { type: Object, default: () => ({ esfera: '-0.5', cilindro: '-0.75', eje: '85' }) },
+    od: { type: Object, default: () => ({ esfera: '-0.5', cilindro: '-0.5', eje: '90' }) },
+})
 </script>

@@ -3,7 +3,7 @@
     width: 98%;
     background: white;
     border: 2px solid #FB1C2E;
-    border-radius: 8px;
+    border-radius: 22px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     margin-bottom: 20px;

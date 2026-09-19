@@ -45,26 +45,25 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td class="EtiquetaFila">1</td>
-                <td>SEIMA SM 1766 UNISEX</td>
-                <td>COMPLETO PASTA</td>
-            </tr>
-            <tr>
-                <td class="EtiquetaFila">1</td>
-                <td>CLIENTE VS POLY COMB</td>
-                <td>COMB +-3.00 CIL -2</td>
-            </tr>
-            <tr>
-                <td class="EtiquetaFila">1</td>
-                <td>CLIENTE VISUAL CAPA ANTIRREFLEJANTE</td>
-                <td>ANTIRREFLEJANTE</td>
+            <tr v-for="(item, idx) in detalles" :key="idx">
+                <td class="EtiquetaFila">{{ item.cantidad }}</td>
+                <td>{{ item.nombre }}</td>
+                <td>{{ item.codigoExterno }}</td>
             </tr>
         </tbody>
     </table>
 </template>
 
 <script setup>
-
+defineProps({
+    detalles: {
+        type: Array,
+        default: () => [
+            { cantidad: 1, nombre: 'SEIMA SM 1766 UNISEX', codigoExterno: 'COMPLETO PASTA' },
+            { cantidad: 1, nombre: 'CLIENTE VS POLY COMB', codigoExterno: 'COMB +-3.00 CIL -2' },
+            { cantidad: 1, nombre: 'CLIENTE VISUAL CAPA ANTIRREFLEJANTE', codigoExterno: 'ANTIRREFLEJANTE' },
+        ],
+    },
+})
 </script>
 

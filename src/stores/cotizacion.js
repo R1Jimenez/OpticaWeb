@@ -101,7 +101,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         return item ? item.piezas : 0
     }
 
-    function construirPayloadCotizacion() {
+    function construirPayloadCotizacion(promesaEntrega) {
         const authStore = useAuthStore()
         const payload = {
             sucursal_id: sucursalSeleccionada.value?.id ?? null,
@@ -111,13 +111,14 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
             tipo_venta: tipoVentaSeleccionado.value?.id ?? null,
             plazo: plazoSeleccionado.value?.id ?? null,
             pago_inicial: Number(pagoInicial.value) || 0,
+            promesa_entrega: promesaEntrega ?? null,
             productos: items.value.map(item => ({
                 producto_id: item.producto.id,
                 cantidad: item.piezas,
             })),
         }
 
-        const faltantes = ['sucursal_id', 'usuario_id', 'id_cliente', 'id_paciente', 'tipo_venta', 'plazo']
+        const faltantes = ['sucursal_id', 'usuario_id', 'id_cliente', 'id_paciente', 'tipo_venta', 'plazo', 'promesa_entrega']
             .filter(campo => payload[campo] === null || payload[campo] === undefined)
         if (faltantes.length > 0) {
             throw new Error(`Faltan datos para crear la cotización: ${faltantes.join(', ')}`)
@@ -129,8 +130,8 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         return payload
     }
 
-    async function crearCotizacion() {
-        const payload = construirPayloadCotizacion()
+    async function crearCotizacion(promesaEntrega) {
+        const payload = construirPayloadCotizacion(promesaEntrega)
         return await createCotizacion(payload)
     }
 
