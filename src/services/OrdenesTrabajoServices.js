@@ -25,8 +25,13 @@ export async function createOrdenTrabajo(payload) {
     return handleResponse(res, 'Error al crear la orden de trabajo')
 }
 
-export async function getOrdenesTrabajo() {
-    const res = await fetch(`${API_BASE}/ordenes-trabajo/all`, {
+export async function getOrdenesTrabajo(filtros = {}) {
+    const params = new URLSearchParams()
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== null && valor !== undefined && valor !== '') params.append(clave, valor)
+    })
+    const query = params.toString()
+    const res = await fetch(`${API_BASE}/ordenes-trabajo/all${query ? `?${query}` : ''}`, {
         headers: authHeaders(),
     })
     return handleResponse(res, 'Error al cargar las ordenes de trabajo')

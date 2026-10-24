@@ -8,7 +8,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig({
   plugins: [
     vue(),
-    vueDevTools(),
+    // devtools rompe los montajes repetidos de las pruebas de componentes de Cypress
+    ...(process.env.CYPRESS_COMPONENT ? [] : [vueDevTools()]),
   ],
   resolve: {
     alias: {

@@ -1,7 +1,11 @@
 <style scoped>
 .InventTablPrincipal {
     width: 98%;
-    background: white;
+    background: radial-gradient(
+        ellipse at center,
+        #F0F0F0 0%,
+        #BCBCBC 100%
+    );
     border: 2px solid #FB1C2E;
     border-radius: 22px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

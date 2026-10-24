@@ -37,6 +37,13 @@
     padding-bottom: 1%;
     box-sizing: border-box;
 }
+
+/* padding-bottom no se respeta al final de un contenedor flex con scroll */
+.ConsulOrdUsages::after {
+    content: '';
+    flex-shrink: 0;
+    height: 20px;
+}
 </style>
 
 <template>
@@ -45,18 +52,19 @@
         <div class="ConsulOrdContenido">
             <NavBar />
             <div class="ConsulOrdUsages">
-                <OrderFilter />
-                <OrderTable />
+                <OrderFilter @consultar="filtros = $event" />
+                <OrderTable :filtros="filtros" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import OrderFilter from '../../components/ordtra/consulordview/OrderFilter.vue';
 import Header from '../../components/Header.vue';
 import NavBar from '../../components/NavBar.vue';
 import OrderTable from '../../components/ordtra/consulordview/OrderTable.vue'
 
-
+const filtros = ref({})
 </script>

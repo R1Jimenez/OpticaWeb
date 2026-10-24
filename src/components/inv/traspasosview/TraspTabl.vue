@@ -86,6 +86,33 @@ table {
     );
 }
 
+.EstBox.Enviado {
+    background: radial-gradient(ellipse at center, #230097 10%, #130348 100%);
+}
+
+.EstBox.Recibido {
+    background: radial-gradient(ellipse at center, #58B358 10%, #459B45 100%);
+}
+
+.EstBox.Cancelado {
+    background: radial-gradient(ellipse at center, #FB1C2E 10%, #bb1724 100%);
+}
+
+.traspasos-empty {
+    padding: 16px;
+}
+
+.empty-box {
+    padding: 16px;
+    background: white;
+    border: 1px solid #BCBCBC;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6C757D;
+    font-style: italic;
+}
+
 .EstBox text {
     font-size: 1rem;
     color: white;
@@ -121,7 +148,16 @@ table {
                 Mostrando Registros Disponibles
             </span>
         </div>
-        <div class="HeadTraspTabl">
+        <div v-if="isLoading" class="traspasos-empty">
+            <div class="empty-box">Cargando traspasos...</div>
+        </div>
+        <div v-else-if="errorMsg" class="traspasos-empty">
+            <div class="empty-box">{{ errorMsg }}</div>
+        </div>
+        <div v-else-if="traspasos.length === 0" class="traspasos-empty">
+            <div class="empty-box">No se encontraron traspasos con los filtros seleccionados</div>
+        </div>
+        <div v-else class="HeadTraspTabl">
             <table>
                 <colgroup>
                     <col style="width: 5%;">
@@ -150,27 +186,27 @@ table {
                     </tr>
                 </thead>
                 <tbody class="bodyTrasp">
-                    <tr>
-                        <td>4483</td>
-                        <td>Almacen Central</td>
-                        <td>Plaza Juárez Mall</td>
+                    <tr v-for="t in traspasos" :key="t.id" :data-cy="`traspaso-${t.id}`">
+                        <td>{{ t.id }}</td>
+                        <td>{{ t.origen }}</td>
+                        <td>{{ t.destino }}</td>
                         <td>
-                            <div class="EstBox">
-                                <text>Recibido</text>
+                            <div class="EstBox" :class="t.estatus">
+                                <text>{{ t.estatus }}</text>
                             </div>
                         </td>
-                        <td>27/06/26</td>
-                        <td>alejandra.rangel</td>
-                        <td>27/06/2026 13:23:59</td>
-                        <td>alejandra.rangel</td>
-                        <td>27/06/2026 13:24:08</td>
+                        <td>{{ formatPromesa(t.promesa_entrega) }}</td>
+                        <td>{{ t.creado_por }}</td>
+                        <td>{{ formatFechaHora(t.fecha_creacion) }}</td>
+                        <td>{{ t.modificado_por }}</td>
+                        <td>{{ formatFechaHora(t.fecha_modificacion) }}</td>
                         <td>
                             <div class="butrow">
-                                <button>
-                                    <span class="material-icons" @click="$emit('abrirModaldet')" style="color:#130348; font-size:20px;">visibility</span>
+                                <button title="Ver detalle" data-cy="ver-traspaso" @click="$emit('ver', t.id)">
+                                    <span class="material-icons" style="color:#130348; font-size:20px;">visibility</span>
                                 </button>
-                                <button>
-                                    <span class="material-icons" @click="$emit('abrirModEdit')" style="color:#130348; font-size:20px;">edit</span>
+                                <button title="Editar / cambiar estatus" data-cy="editar-traspaso" @click="$emit('editar', t.id)">
+                                    <span class="material-icons" style="color:#130348; font-size:20px;">edit</span>
                                 </button>
                             </div>
                         </td>
@@ -178,9 +214,79 @@ table {
                 </tbody>
             </table>
         </div>
+
+        <Paginacion
+            v-if="!isLoading && !errorMsg && total > 0"
+            v-model:pagina="pagina"
+            :total="total"
+            :por-pagina="POR_PAGINA"
+            etiqueta="traspasos"
+        />
     </div>
 </template>
 
 <script setup>
-defineEmits(['abrirModaldet', 'abrirModEdit'])
+import { ref, watch } from 'vue'
+import Paginacion from '../../Paginacion.vue'
+import { getTraspasos } from '../../../services/TraspasosServices'
+import { parsearFechaUTC, parsearFechaCalendario } from '../../../utils/formato'
+
+const POR_PAGINA = 10
+
+const props = defineProps({
+    filtros: { type: Object, default: () => ({}) },
+    // se incrementa desde la vista para recargar tras crear o modificar un traspaso
+    recarga: { type: Number, default: 0 },
+})
+
+defineEmits(['ver', 'editar'])
+
+const traspasos = ref([])
+const total = ref(0)
+const pagina = ref(1)
+const isLoading = ref(false)
+const errorMsg = ref(null)
+
+let solicitud = 0
+
+const cargarTraspasos = async () => {
+    // descarta respuestas de consultas anteriores que lleguen tarde
+    const actual = ++solicitud
+    isLoading.value = true
+    errorMsg.value = null
+    try {
+        const respuesta = await getTraspasos(props.filtros, pagina.value, POR_PAGINA)
+        if (actual !== solicitud) return
+        traspasos.value = respuesta.items
+        total.value = respuesta.total
+    } catch (error) {
+        if (actual !== solicitud) return
+        errorMsg.value = error.message
+        traspasos.value = []
+        total.value = 0
+    } finally {
+        if (actual === solicitud) isLoading.value = false
+    }
+}
+
+watch(() => props.filtros, () => {
+    if (pagina.value === 1) cargarTraspasos()
+    else pagina.value = 1
+}, { deep: true })
+
+watch(() => props.recarga, cargarTraspasos)
+watch(pagina, cargarTraspasos, { immediate: true })
+
+const pad = (n) => String(n).padStart(2, '0')
+
+const formatPromesa = (valor) => {
+    const d = parsearFechaCalendario(valor)
+    return d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)}` : '-'
+}
+
+const formatFechaHora = (valor) => {
+    const d = parsearFechaUTC(valor)
+    if (!d) return '-'
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 </script>

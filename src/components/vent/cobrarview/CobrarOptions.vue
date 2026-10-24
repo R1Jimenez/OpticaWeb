@@ -116,6 +116,11 @@
     background-color: greenyellow;
     cursor: pointer;
 }
+
+.CobOpsTotalRow button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
 </style>
 
 <template>
@@ -132,16 +137,24 @@
             </div>
         </div>
 
+        <div class="CobOpsContenido" v-if="modelValue === 'En Espera'">
+            <EnEspera @clienteSeleccionado="emit('clienteSeleccionado', $event)" />
+        </div>
+
         <div class="CobOpsContenido" v-if="modelValue === 'Pago Inicial' && cliente">
             <PagoInicial :cliente="cliente" />
+        </div>
+
+        <div class="CobOpsContenido" v-if="modelValue === 'Cuentas Por Cobrar'">
+            <CuentasPorCobrar ref="cuentasRef" :cliente="cliente" @update:total="totalGlobal = $event" />
         </div>
 
         <div class="CobOpsTotalRow">
             <text>
                 Total Global
             </text>
-            <span>$0.00</span>
-            <button>
+            <span>{{ formatearMoneda(totalGlobal) }}</span>
+            <button :disabled="!puedeAceptar" @click="aceptar">
                 Aceptar
             </button>
         </div>
@@ -149,7 +162,11 @@
 </template>
 
 <script setup>
+import { ref, computed, watch } from 'vue'
 import PagoInicial from './opcionescobrar/PagoInicial.vue'
+import EnEspera from './opcionescobrar/EnEspera.vue'
+import CuentasPorCobrar from './opcionescobrar/CuentasPorCobrar.vue'
+import { formatearMoneda } from '../../../utils/formato'
 
 const props = defineProps({
     modelValue: {
@@ -162,12 +179,12 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'clienteSeleccionado'])
 
 const opciones = [
     'En Espera',
     'Pago Inicial',
-    'Pagos Principales',
+    'Pagos Parciales',
     'Cuentas Por Cobrar',
     'Liquidaciones',
     'Cancelaciones',
@@ -176,5 +193,22 @@ const opciones = [
 
 const OpSelected = (op) => {
     emit('update:modelValue', op)
+}
+
+const cuentasRef = ref(null)
+const totalGlobal = ref(0)
+
+const puedeAceptar = computed(() =>
+    props.modelValue === 'Cuentas Por Cobrar' && totalGlobal.value > 0 && !cuentasRef.value?.procesando
+)
+
+watch(() => props.modelValue, () => {
+    totalGlobal.value = 0
+})
+
+const aceptar = async () => {
+    if (props.modelValue === 'Cuentas Por Cobrar') {
+        await cuentasRef.value?.aplicar()
+    }
 }
 </script>

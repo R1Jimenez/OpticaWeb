@@ -2,13 +2,14 @@
 .ModTraspDet {
     display: flex;
     flex-direction: column;
-    gap: 5%;
+    gap: 3%;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
+    overflow-y: auto;
+    padding: 2% 0;
     z-index: 999;
 }
 
@@ -17,6 +18,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;
     width: 75%;
     padding-bottom: 10px;
     background: radial-gradient(
@@ -54,7 +56,8 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    width: 7%;
+    width: auto;
+    gap: 6px;
     justify-content: space-around;
     padding: 5px;
     background: radial-gradient(
@@ -167,60 +170,122 @@
     overflow-wrap: break-word;
     border: 1px solid #130348;   
 }
+
+.TrasDetBody tr.Totales td {
+    font-weight: 700;
+    background-color: #F5F5F5;
+}
+
+.EstatusColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.estbox.Nuevo,
+.estbox.Enviado,
+.estbox.Recibido,
+.estbox.Cancelado {
+    color: white;
+}
+
+.estbox.Nuevo {
+    background: radial-gradient(ellipse at center, #130348 10%, #07072C 100%);
+}
+
+.estbox.Enviado {
+    background: radial-gradient(ellipse at center, #230097 10%, #130348 100%);
+}
+
+.estbox.Recibido {
+    background: radial-gradient(ellipse at center, #58B358 10%, #459B45 100%);
+}
+
+.estbox.Cancelado {
+    background: radial-gradient(ellipse at center, #FB1C2E 10%, #bb1724 100%);
+}
+
+.DetMensaje {
+    padding: 20px;
+    color: #130348;
+    font-weight: 600;
+}
+
+.CerrarBtn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+}
+
+.HeaderAcciones {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
 </style>
 
 <template>
-    <div class="ModTraspDet" @click.self="$emit('cerrarm')">
+    <div class="ModTraspDet" data-cy="detalle-traspaso" @click.self="$emit('cerrarm')">
         <div class="PrincDet">
             <div class="DetHeader">
-                <span>Información General</span>
-                <button class="impbut">
-                    <span class="material-icons">print</span>
-                    <span>Imprimir</span>
-                </button>
+                <span>Información General — Traspaso #{{ traspasoId }}</span>
+                <div class="HeaderAcciones">
+                    <button class="impbut" :disabled="!traspaso" @click="imprimir">
+                        <span class="material-icons">print</span>
+                        <span>Imprimir</span>
+                    </button>
+                    <button class="CerrarBtn" title="Cerrar" @click="$emit('cerrarm')">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
             </div>
-            <div class="GridForm">
+            <div v-if="cargando" class="DetMensaje">Cargando traspaso...</div>
+            <div v-else-if="error" class="DetMensaje">{{ error }}</div>
+            <div v-else-if="traspaso" class="GridForm">
                 <text>Comentarios: </text>
-                <span>Para venta en Plaza</span>
+                <span>{{ traspaso.comentarios || '-' }}</span>
 
                 <text>Estatus:</text>
                 <div class="EstatusColumn">
-                    <div class="estbox">Nuevo</div>
-                    <span>El traspaso no ha sido guardado</span>
+                    <div class="estbox" :class="traspaso.estatus" data-cy="detalle-estatus">{{ traspaso.estatus }}</div>
+                    <span>{{ ESTATUS_DESCRIPCION[traspaso.estatus] }}</span>
                 </div>
 
                 <text>Origen:</text>
-                <span>Smart La Cuesta</span>
+                <span>{{ traspaso.origen }}</span>
                 
                 <text>Destino:</text>
-                <span>Plaza Juarez Mall</span>
+                <span>{{ traspaso.destino }}</span>
 
                 <text>Promesa de Entrega: </text>
-                <span>Lunes, 29 de junio de 2026</span>
+                <span>{{ promesaLarga }}</span>
 
                 <text>Creado Por:</text>
-                <span>alejandra.rangel</span>
+                <span>{{ traspaso.creado_por }}</span>
 
                 <text>Fecha Creacion:</text>
-                <span>29/06/2026 09:57:12</span>
+                <span>{{ formatFechaHora(traspaso.fecha_creacion) }}</span>
 
                 <text>Modificado Por:</text>
-                <span>alejandra.rangel</span>
+                <span>{{ traspaso.modificado_por }}</span>
 
                 <text>Ultima Modificacion:</text>
-                <span>29/06/2026 09:57:24</span>
+                <span>{{ formatFechaHora(traspaso.fecha_modificacion) }}</span>
             </div>
         </div>
-        <div class="PrincDet">
+        <div v-if="traspaso" class="PrincDet">
             <div class="DetHeader">
-                <span>1 Productos</span>
+                <span>{{ traspaso.detalles.length }} Productos</span>
             </div>
             <table class="TrasDetTab">
                 <colgroup>
-                    <col style="width: 2%;">
+                    <col style="width: 3%;">
                     <col style="width: 14%;">
                     <col style="width: 13%;">
-                    <col style="width: 21%;">
+                    <col style="width: 20%;">
                     <col style="width: 15%;">
                     <col style="width: 8.75%;">
                     <col style="width: 8.75%;">
@@ -233,7 +298,7 @@
                         <th>Código</th>
                         <th>Nombre</th>
                         <th>Descripción</th>
-                        <th>Código Extremo</th>
+                        <th>Código Externo</th>
                         <th>Unidades en Existencia</th>
                         <th>Cantidad Solicitada</th>
                         <th>Cantidad Enviada</th>
@@ -241,27 +306,23 @@
                     </tr>
                 </thead>
                 <tbody class="TrasDetBody">
-                    <tr>
-                        <td>1</td>
-                        <td>0100640001700000155</td>
-                        <td>NIKE NK 7281 UNISEX</td>
-                        <td>OFTALMICO NIKE UNISEX NK 7281 (0100640001700000155)</td>
-                        <td>COMPLETO PAS/METAL</td>
-                        <td>7</td>
-                        <td>1</td>
-                        <td>1</td>
-                        <td>1</td>
+                    <tr v-for="(d, idx) in traspaso.detalles" :key="d.producto_id">
+                        <td>{{ idx + 1 }}</td>
+                        <td>{{ d.codigo }}</td>
+                        <td>{{ d.nombre }}</td>
+                        <td>{{ d.descripcion }}</td>
+                        <td>{{ d.codigo_externo }}</td>
+                        <td>{{ d.existencia_origen }}</td>
+                        <td>{{ d.cantidad_solicitada }}</td>
+                        <td>{{ d.cantidad_enviada ?? '-' }}</td>
+                        <td>{{ d.cantidad_recibida ?? '-' }}</td>
                     </tr>
-                    <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td>7</td>
-                        <td>1</td>
-                        <td>1</td>
-                        <td>1</td>
+                    <tr class="Totales">
+                        <td colspan="5">Totales</td>
+                        <td>{{ totales.existencia }}</td>
+                        <td>{{ totales.solicitada }}</td>
+                        <td>{{ totales.enviada }}</td>
+                        <td>{{ totales.recibida }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -270,7 +331,113 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { getTraspaso } from '../../../services/TraspasosServices'
+import { parsearFechaUTC, parsearFechaCalendario, escapeHtml } from '../../../utils/formato'
+import { ESTATUS_DESCRIPCION } from '../../../utils/traspasos'
+
+const props = defineProps({
+    traspasoId: { type: Number, required: true },
+})
 
 defineEmits(['cerrarm'])
+
+const traspaso = ref(null)
+const cargando = ref(false)
+const error = ref(null)
+
+const pad = (n) => String(n).padStart(2, '0')
+
+const formatFechaHora = (valor) => {
+    const d = parsearFechaUTC(valor)
+    if (!d) return '-'
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+const promesaLarga = computed(() => {
+    const d = parsearFechaCalendario(traspaso.value?.promesa_entrega)
+    if (!d) return 'Sin fecha'
+    const texto = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return texto.charAt(0).toUpperCase() + texto.slice(1)
+})
+
+const totales = computed(() => {
+    const suma = (campo) => (traspaso.value?.detalles ?? []).reduce((acc, d) => acc + (d[campo] ?? 0), 0)
+    return {
+        existencia: suma('existencia_origen'),
+        solicitada: suma('cantidad_solicitada'),
+        enviada: suma('cantidad_enviada'),
+        recibida: suma('cantidad_recibida'),
+    }
+})
+
+const imprimir = () => {
+    const t = traspaso.value
+    const ventana = window.open('', '_blank')
+    if (!t || !ventana) return
+
+    const filas = t.detalles.map((d, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(d.codigo)}</td>
+            <td>${escapeHtml(d.nombre)}</td>
+            <td>${escapeHtml(d.codigo_externo)}</td>
+            <td class="num">${d.cantidad_solicitada}</td>
+            <td class="num">${d.cantidad_enviada ?? '-'}</td>
+            <td class="num">${d.cantidad_recibida ?? '-'}</td>
+        </tr>`).join('')
+
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Traspaso #${t.id}</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 20px; }
+                h1 { font-size: 18px; margin: 0 0 10px; }
+                .info { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; margin-bottom: 16px; }
+                .info b { text-align: right; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+                th { background: #eee; }
+                .num { text-align: right; }
+                .firmas { display: flex; justify-content: space-around; margin-top: 60px; }
+                .firmas div { border-top: 1px solid #000; width: 35%; text-align: center; padding-top: 4px; }
+            </style>
+        </head>
+        <body>
+            <h1>Visual Optics — Traspaso #${t.id}</h1>
+            <div class="info">
+                <b>Estatus:</b><span>${escapeHtml(t.estatus)}</span>
+                <b>Origen:</b><span>${escapeHtml(t.origen)}</span>
+                <b>Destino:</b><span>${escapeHtml(t.destino)}</span>
+                <b>Promesa de entrega:</b><span>${escapeHtml(promesaLarga.value)}</span>
+                <b>Creado por:</b><span>${escapeHtml(t.creado_por)} — ${escapeHtml(formatFechaHora(t.fecha_creacion))}</span>
+                <b>Última modificación:</b><span>${escapeHtml(t.modificado_por)} — ${escapeHtml(formatFechaHora(t.fecha_modificacion))}</span>
+                <b>Comentarios:</b><span>${escapeHtml(t.comentarios || '-')}</span>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Código</th><th>Nombre</th><th>Código Externo</th><th>Solicitada</th><th>Enviada</th><th>Recibida</th></tr>
+                </thead>
+                <tbody>${filas}</tbody>
+            </table>
+            <div class="firmas"><div>Entrega</div><div>Recibe</div></div>
+        </body>
+        </html>
+    `)
+    ventana.document.close()
+    ventana.focus()
+    ventana.print()
+}
+
+onMounted(async () => {
+    cargando.value = true
+    try {
+        traspaso.value = await getTraspaso(props.traspasoId)
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        cargando.value = false
+    }
+})
 </script>

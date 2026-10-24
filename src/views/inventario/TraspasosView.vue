@@ -37,6 +37,13 @@
     padding-bottom: 1%;
     box-sizing: border-box;
 }
+
+/* padding-bottom no se respeta al final de un contenedor flex con scroll */
+.TrasUsages::after {
+    content: '';
+    flex-shrink: 0;
+    height: 20px;
+}
 </style>
 
 <template>
@@ -45,22 +52,26 @@
         <div class="TrasContenido">
             <NavBar />
             <div class="TrasUsages">
-                <TraspFilt @abrirModal="modalAbierto = true" />
-                <TraspTabl @abrirModaldet="moddetAbierto = true" @abrirModEdit="modedAbierto = true"/>
+                <TraspFilt @abrirModal="abrirEdicion(null)" @filtrar="filtros = $event" />
+                <TraspTabl
+                    :filtros="filtros"
+                    :recarga="recarga"
+                    @ver="traspasoDetalle = $event"
+                    @editar="abrirEdicion($event)"
+                />
             </div>
         </div>
         <TraspCreate
-            v-if="modalAbierto"
-            @cerrar="modalAbierto = false"
+            v-if="edicionAbierta"
+            :traspaso-id="traspasoEdicion"
+            @cerrar="edicionAbierta = false"
+            @guardado="recarga++"
         />
         <TraspDet
-            v-if="moddetAbierto"
-            @cerrarm="moddetAbierto = false"
+            v-if="traspasoDetalle != null"
+            :traspaso-id="traspasoDetalle"
+            @cerrarm="traspasoDetalle = null"
         />
-        <TraspCreate
-            v-if="modedAbierto"
-            @cerrar="modedAbierto = false"
-        />    
     </div>
 </template>
 
@@ -73,7 +84,14 @@ import TraspFilt from '../../components/inv/traspasosview/TraspFilt.vue';
 import TraspCreate from '../../components/inv/traspasosview/TraspCreate.vue';
 import TraspDet from '../../components/inv/traspasosview/TraspDet.vue';
 
-const modalAbierto = ref(false)
-const moddetAbierto = ref(false)
-const modedAbierto = ref(false)
+const filtros = ref({})
+const recarga = ref(0)
+const edicionAbierta = ref(false)
+const traspasoEdicion = ref(null)
+const traspasoDetalle = ref(null)
+
+const abrirEdicion = (id) => {
+    traspasoEdicion.value = id
+    edicionAbierta.value = true
+}
 </script>

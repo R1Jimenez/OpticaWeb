@@ -11,7 +11,7 @@
     );
     border: 2px solid #FB1C2E;
     border-radius: 22px;
-    overflow: hidden;
+    overflow: visible;
     gap: 7%;
     flex-shrink: 0;
 }
@@ -21,6 +21,8 @@
     padding: 12px 16px;
     background-color: #130348;
     border-bottom: 2px solid #FB1C2E;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
 .ConsFiltHeader span {
@@ -134,6 +136,83 @@
     color: #FFFFFF;
     font-size: 1rem;
     font-weight: 500;
+    cursor: pointer;
+}
+
+.Consbtn:hover {
+    background-color: #230097;
+}
+
+.Consbtn.secundario {
+    padding: 10px 20px;
+    background-color: transparent;
+    border: 1.5px solid #130348;
+    color: #130348;
+}
+
+.Consbtn.secundario:hover {
+    background-color: #F0F0F0;
+}
+
+.BtnGroup {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.EstBox.deshabilitado {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.DropWrap {
+    position: relative;
+    width: 47%;
+}
+
+.DropWrap .EstBox2 {
+    width: 100%;
+}
+
+.DropWrap .EstBox2 text {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.DropMenu {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    min-width: 100%;
+    width: max-content;
+    background: white;
+    border: 2px solid #FB1C2E;
+    border-radius: 15px;
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.DropItem {
+    padding: 10px 18px;
+    cursor: pointer;
+    border-bottom: 1px solid #F0F0F0;
+    color: #130348;
+    font-size: 1rem;
+    transition: background 0.15s;
+}
+
+.DropItem:last-child {
+    border-bottom: none;
+}
+
+.DropItem:hover,
+.DropItem.activo {
+    background-color: #F5F5F5;
+    font-weight: 600;
 }
 </style>
 
@@ -153,11 +232,13 @@
                     Orden #
                 </text>
                 <input
-                    type=int
+                    type="number"
+                    min="1"
                     placeholder="Numero de Orden"
                     class="bars"
-                    v-model="searchQuery"
+                    v-model="ordenId"
                     autocomplete="off"
+                    @keyup.enter="consultar"
                 />
             </div>
             <div class="RowData">
@@ -165,20 +246,22 @@
                     Presupuesto #
                 </text>
                 <input
-                    type=int
+                    type="number"
+                    min="1"
                     placeholder="Ingresar Presupuesto"
                     class="bars"
-                    v-model="searchQuery"
+                    v-model="presupuestoId"
                     autocomplete="off"
+                    @keyup.enter="consultar"
                 />
             </div>
             <div class="RowData">
                 <text>
                     Estatus Óptica
                 </text>
-                <div class="EstBox">
+                <div class="EstBox deshabilitado" title="Las órdenes aún no manejan estatus en el sistema">
                     <text>
-                        Activo
+                        Todos
                     </text>
                     <span class="material-icons" style="color:#130348; font-size:25px;">arrow_drop_down</span>
                 </div>
@@ -189,28 +272,94 @@
                 <text>
                     Nombre Cliente:
                 </text>
-                <ClienteBarSec />
+                <ClienteBarSec :key="clienteBarKey" @clienteSeleccionado="cliente = $event" />
             </div>
             <div class="RowData3">
                 <text>
                     Sucursal
                 </text>
-                <div class="EstBox2">
-                    <text>
-                        Activo
-                    </text>
-                    <span class="material-icons" style="color:#130348; font-size:25px;">arrow_drop_down</span>
+                <div class="DropWrap">
+                    <div class="EstBox2" @click="toggleSucursales">
+                        <text>
+                            {{ sucursal?.sucursal ?? 'Todas' }}
+                        </text>
+                        <span class="material-icons" style="color:#130348; font-size:25px;">arrow_drop_down</span>
+                    </div>
+                    <div class="DropMenu" v-if="mostrarSucursales">
+                        <div class="DropItem" :class="{ activo: !sucursal }" @click="seleccionarSucursal(null)">
+                            Todas
+                        </div>
+                        <div
+                            v-for="s in sucursales"
+                            :key="s.id"
+                            class="DropItem"
+                            :class="{ activo: sucursal?.id === s.id }"
+                            @click="seleccionarSucursal(s)"
+                        >
+                            {{ s.sucursal }}
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button class="Consbtn">
-                Consultar
-            </button>
+            <div class="BtnGroup">
+                <button class="Consbtn secundario" @click="limpiar">
+                    Limpiar
+                </button>
+                <button class="Consbtn" @click="consultar">
+                    Consultar
+                </button>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import ClienteBarSec from './ClienteBarSec.vue';
+import { getSucursales } from '../../../services/SucursalesServices'
 
+const emit = defineEmits(['consultar'])
 
+const ordenId = ref('')
+const presupuestoId = ref('')
+const cliente = ref(null)
+const sucursal = ref(null)
+const sucursales = ref([])
+const mostrarSucursales = ref(false)
+const clienteBarKey = ref(0)
+
+const toggleSucursales = () => {
+    mostrarSucursales.value = !mostrarSucursales.value
+}
+
+const seleccionarSucursal = (s) => {
+    sucursal.value = s
+    mostrarSucursales.value = false
+}
+
+const consultar = () => {
+    emit('consultar', {
+        orden_id: ordenId.value || null,
+        id_cotizacion: presupuestoId.value || null,
+        id_cliente: cliente.value?.id ?? null,
+        sucursal_id: sucursal.value?.id ?? null,
+    })
+}
+
+const limpiar = () => {
+    ordenId.value = ''
+    presupuestoId.value = ''
+    cliente.value = null
+    sucursal.value = null
+    clienteBarKey.value++
+    consultar()
+}
+
+onMounted(async () => {
+    try {
+        sucursales.value = await getSucursales()
+    } catch (error) {
+        console.error('Error al cargar sucursales:', error)
+    }
+})
 </script>

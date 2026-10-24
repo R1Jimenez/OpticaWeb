@@ -407,7 +407,7 @@ tbody td {
                     <td>${{ totalNormalSeguro.toFixed(2) }}</td>
                     <td>${{ totalVentaSeguro.toFixed(2) }}</td>
                     <td>
-                        <button class="accept" @click="imprimirMuestra">
+                        <button class="accept" @click="imprimirMuestra()">
                             <span>Imprimir Cotización Muestra</span>
                         </button>
                     </td>
@@ -466,6 +466,7 @@ import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useCotizacionStore } from '../../../stores/cotizacion'
 import { getPacientesByCliente } from '../../../services/PacientesServices'
+import { abrirVentanaTicket, escribirTicket } from '../../../utils/ticket'
 
 const cotizacionStore = useCotizacionStore()
 const authStore = useAuthStore()
@@ -507,17 +508,6 @@ const vendedorNombre = computed(() => {
     return u.nombre || u.usuario || u.username || 'N/A'
 })
 
-const fechaTicket = computed(() => {
-    return new Date().toLocaleString('es-MX', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    })
-})
-
 const totalItem = (item) => Number(item.precio?.precio || 0) * item.piezas
 
 const quitarProducto = (item) => {
@@ -525,163 +515,37 @@ const quitarProducto = (item) => {
 }
 
 const imprimirMuestra = (folio = null) => {
-    const ventana = window.open('', '_blank')
-    if (!ventana) return
-
-    const esTicketReal = !!folio
-    const descuentoPct = cotizacionStore.descuentoPorcentaje || 0
-    const totalNormalVal = totalNormalSeguro.value
-    const totalVentaVal = totalVentaSeguro.value
-    const ahorroTotal = ahorro.value
-    const pagoInicialVal = Number(cotizacionStore.pagoInicial) || 0
-    const pagoRestanteVal = totalVentaVal - pagoInicialVal
-
     const cliente = cotizacionStore.clienteSeleccionado
-    const direccionCliente = cliente
-        ? `${cliente.calle} ${cliente.numero}, ${cliente.colonia}, ${cliente.ciudad}, ${cliente.estado}, CP ${cliente.codigopostal}`
-        : 'N/A'
-    const tipoClienteNombre = cotizacionStore.tipoClienteSeleccionado?.cliente || 'N/A'
-    const plazoNombre = cotizacionStore.plazoSeleccionado?.plazo || 'N/A'
+    const totalVentaVal = totalVentaSeguro.value
+    const pagoInicialVal = Number(cotizacionStore.pagoInicial) || 0
 
-    const filas = cotizacionStore.items.map(item => {
-        const precioUnit = Number(item.precio?.precio || 0)
-        const descuentoUnit = precioUnit * descuentoPct / 100
-        const precioConDescuento = precioUnit - descuentoUnit
-        const subtotal = precioConDescuento * item.piezas
-
-        return `
-            <tr>
-                <td>${item.piezas}</td>
-                <td>${item.producto.nombre}</td>
-                <td>$${precioUnit.toFixed(2)}</td>
-                <td>$${descuentoUnit.toFixed(2)}</td>
-                <td>$${subtotal.toFixed(2)}</td>
-            </tr>
-        `
-    }).join('')
-
-    const bloqueClienteExtendido = esTicketReal ? `
-        <p>Tipo Cliente: ${tipoClienteNombre}</p>
-        <p>Nombre: ${nombreCliente.value || 'N/A'}</p>
-        <p>Dirección: ${direccionCliente}</p>
-        <p>Teléfono: ${cliente?.telefono || 'N/A'}</p>
-        <hr>
-    ` : `
-        <p>Cliente: ${nombreCliente.value || 'N/A'}</p>
-    `
-
-    const bloquePago = esTicketReal ? `
-        <hr>
-        <p>Plazo: ${plazoNombre}</p>
-        <p>Pago Inicial: $${pagoInicialVal.toFixed(2)}</p>
-        <p>Pago Restante: $${pagoRestanteVal.toFixed(2)}</p>
-        <p>Promesa de Entrega: ${fechaEntrega.value || 'N/A'}</p>
-    ` : ''
-
-    ventana.document.write(`
-        <html>
-        <head>
-            <title>${folio ? `Cotización #${folio}` : 'Cotización Muestra'}</title>
-            <style>
-                @page {
-                    size: 80mm auto;
-                    margin: 0;
-                }
-                * { box-sizing: border-box; }
-                body {
-                    width: 80mm;
-                    margin: 0;
-                    padding: 4mm;
-                    font-family: 'Courier New', monospace;
-                    font-size: 11px;
-                    color: #000;
-                }
-                h2 {
-                    margin: 0 0 4px 0;
-                    font-size: 13px;
-                    text-align: center;
-                }
-                p {
-                    margin: 2px 0;
-                }
-                hr {
-                    border: none;
-                    border-top: 1px dashed #000;
-                    margin: 6px 0;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 6px;
-                }
-                th, td {
-                    padding: 2px 0;
-                    font-size: 10px;
-                    text-align: left;
-                }
-                th {
-                    border-bottom: 1px dashed #000;
-                }
-                .pz, .pu, .sub {
-                    text-align: right;
-                }
-                .total, .ahorro {
-                    text-align: right;
-                    font-weight: bold;
-                    margin-top: 4px;
-                    font-size: 12px;
-                }
-                .footer {
-                    text-align: center;
-                    margin-top: 8px;
-                    font-size: 10px;
-                }
-            </style>
-        </head>
-        <body>
-            <h2>Visual Optics</h2>
-            <h2>${folio ? `Cotización #${folio}` : 'Cotización Muestra'}</h2>
-            ${!esTicketReal ? `<p style="text-align:center;">(sin validez fiscal)</p>` : ''}
-            <hr>
-            <p>Sucursal: ${sucursalNombre.value}</p>
-            <p>Fecha: ${fechaTicket.value}</p>
-            <p>Vendedor: ${vendedorNombre.value}</p>
-            <hr>
-            ${bloqueClienteExtendido}
-            <p>Paciente: ${nombrePaciente.value || 'N/A'}</p>
-            <hr>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cant.</th>
-                        <th>Prod.</th>
-                        <th class="pz">Precio Unit</th>
-                        <th class="pu">Desc. Unit.</th>
-                        <th class="sub">Subt.</th>
-                    </tr>
-                </thead>
-                <tbody>${filas}</tbody>
-            </table>
-            <hr>
-            <p>Total Normal: $${totalNormalVal.toFixed(2)}</p>
-            <p class="ahorro">Descuento (${descuentoPct}%): -$${ahorroTotal.toFixed(2)}</p>
-            <p class="total">Total: $${totalVentaVal.toFixed(2)}</p>
-            ${bloquePago}
-            <hr>
-            <p class="footer">Visual Optics</p>
-            <p class="footer">Despues de 60 dias, no nos hacemos</p>
-            <p class="footer">responsables por ningun trabajo.</p>
-            <p class="footer">Ordenado el trabajo, no se admiten</p>
-            <p class="footer">cancelaciones ni devoluciones.</p>
-            <p class="footer">Gracias por su preferencia.</p>
-            <p class="footer">Aviso de privacidad disponible en nuestra</p>
-            <p class="footer">página web.</p>
-        </body>
-        </html>
-    `)
-    ventana.document.close()
-    ventana.focus()
-    ventana.print()
+    escribirTicket(abrirVentanaTicket(), {
+        folio,
+        sucursal: sucursalNombre.value,
+        fecha: new Date(),
+        vendedor: vendedorNombre.value,
+        cliente: {
+            nombre: nombreCliente.value,
+            direccion: cliente
+                ? `${cliente.calle} ${cliente.numero}, ${cliente.colonia}, ${cliente.ciudad}, ${cliente.estado}, CP ${cliente.codigopostal}`
+                : null,
+            telefono: cliente?.telefono,
+            tipo: cotizacionStore.tipoClienteSeleccionado?.cliente,
+        },
+        paciente: nombrePaciente.value,
+        items: cotizacionStore.items.map(item => ({
+            cantidad: item.piezas,
+            nombre: item.producto.nombre,
+            precioUnitario: Number(item.precio?.precio || 0),
+        })),
+        descuentoPct: cotizacionStore.descuentoPorcentaje || 0,
+        totalNormal: totalNormalSeguro.value,
+        totalVenta: totalVentaVal,
+        plazo: cotizacionStore.plazoSeleccionado?.plazo,
+        pagoInicial: pagoInicialVal,
+        pagoRestante: totalVentaVal - pagoInicialVal,
+        promesaEntrega: fechaEntrega.value,
+    })
 }
 
 const abrirModalEntrega = () => {

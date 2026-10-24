@@ -51,8 +51,12 @@
         <div class="CobrarContenido">
             <NavBar />
             <div class="CobrarUsages">
-                <CLienteBar @clienteSeleccionado="onClienteSeleccionado"/>
-                <CobrarOptions v-model="opcionSeleccionada" :cliente="clienteSeleccionado" />
+                <CLienteBar :cliente="clienteSeleccionado" @clienteSeleccionado="onClienteSeleccionado"/>
+                <CobrarOptions
+                    v-model="opcionSeleccionada"
+                    :cliente="clienteSeleccionado"
+                    @clienteSeleccionado="onClienteEnEspera"
+                />
                 <FormasPago />
             </div>
         </div>
@@ -69,10 +73,15 @@ import FormasPago from '../../components/vent/cobrarview/FormasPago.vue'
 
 const clienteSeleccionado = ref(null)
 const pacienteSeleccionado = ref(null)
-const opcionSeleccionada = ref(null)
+const opcionSeleccionada = ref('En Espera')
 
 const onClienteSeleccionado = (cliente) => {
     clienteSeleccionado.value = cliente
     pacienteSeleccionado.value = null
+}
+
+const onClienteEnEspera = (cliente) => {
+    onClienteSeleccionado(cliente)
+    opcionSeleccionada.value = 'Pago Inicial'
 }
 </script>

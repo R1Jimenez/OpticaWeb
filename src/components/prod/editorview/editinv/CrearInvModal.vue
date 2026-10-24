@@ -454,6 +454,7 @@ const guardar = async () => {
                         producto_id: Number(props.productoId),
                         entrada: entradaVal,
                         merma: mermaVal,
+                        tipo: 'Inventario Inicial',
                     })
                     existenciaActual[s.id] = movimiento.existencia_final
                     existenciaFinal[s.id] = movimiento.existencia_final

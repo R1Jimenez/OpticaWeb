@@ -3,7 +3,7 @@
     width: 98%;
     background: radial-gradient(
         ellipse at center,
-        #F0F0F0 10%,
+        #F0F0F0 50%,
         #BCBCBC 100%
     );
     border: 2px solid #FB1C2E;

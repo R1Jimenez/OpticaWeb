@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
-import { createCotizacion, getTicketPdf } from '../services/CotizacionServices'
+import { createCotizacion } from '../services/CotizacionServices'
 import { getTipoCliente } from '../services/TipoClienteServices'
 
 export const useCotizacionStore = defineStore('cotizacion', () => {
@@ -25,18 +25,18 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
     const totalVenta = computed(() => totalNormal.value - (totalNormal.value * descuentoPorcentaje.value / 100))
 
     async function cargarDescuentoCliente(cliente) {
-    descuentoPorcentaje.value = 0
-    tipoClienteSeleccionado.value = null
-    if (!cliente?.tipocliente) return
-    try {
-        const tipoCliente = await getTipoCliente(cliente.tipocliente)
-        tipoClienteSeleccionado.value = tipoCliente
-        descuentoPorcentaje.value = Number(tipoCliente?.porcentaje_descuento) || 0
-    } catch {
         descuentoPorcentaje.value = 0
         tipoClienteSeleccionado.value = null
+        if (!cliente?.tipocliente) return
+        try {
+            const tipoCliente = await getTipoCliente(cliente.tipocliente)
+            tipoClienteSeleccionado.value = tipoCliente
+            descuentoPorcentaje.value = Number(tipoCliente?.porcentaje_descuento) || 0
+        } catch {
+            descuentoPorcentaje.value = 0
+            tipoClienteSeleccionado.value = null
+        }
     }
-}
 
     function setCliente(cliente) {
         clienteSeleccionado.value = cliente
@@ -59,7 +59,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         tipoVentaSeleccionado.value = tipoVenta
     }
 
-    function setPlazo (plazo) {
+    function setPlazo(plazo) {
         plazoSeleccionado.value = plazo
     }
 
@@ -135,14 +135,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         return await createCotizacion(payload)
     }
 
-    async function imprimirTicket(cotizacionId) {
-        const blob = await getTicketPdf(cotizacionId)
-        const url = URL.createObjectURL(blob)
-        const ventana = window.open(url, '_blank')
-        ventana?.addEventListener('load', () => ventana.print())
-    }
-
-    return { 
+    return {
         clienteSeleccionado,
         pacienteSeleccionado,
         tipoVentaSeleccionado,
@@ -169,6 +162,5 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         piezasEnCarrito,
         construirPayloadCotizacion,
         crearCotizacion,
-        imprimirTicket,
     }
 })

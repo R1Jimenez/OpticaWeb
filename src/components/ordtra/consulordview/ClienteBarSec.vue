@@ -169,6 +169,7 @@ const onInput = () => {
     if (searchQuery.value.trim().length === 0) {
         mostrarDropdown.value = false
         resultados.value = []
+        emit('clienteSeleccionado', null)
         return
     }
 
@@ -186,7 +187,7 @@ const buscar = async () => {
 
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/cliente/search?cliente=${encodeURIComponent(clienteQuery.value)}`,
+            `http://127.0.0.1:8000/cliente/search?cliente=${encodeURIComponent(searchQuery.value)}`,
             { headers: authHeaders() }
         )
         const data = await response.json()

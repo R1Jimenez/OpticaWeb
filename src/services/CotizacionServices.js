@@ -39,6 +39,13 @@ export async function getCotizacionesByCliente(idCliente) {
     return handleResponse(res, 'Error al cargar las cotizaciones del cliente')
 }
 
+export async function getCotizacionesEnEspera(sucursalId) {
+    const res = await fetch(`${API_BASE}/cotizacion/en-espera/${sucursalId}`, {
+        headers: authHeaders(),
+    })
+    return handleResponse(res, 'Error al cargar las cotizaciones en espera')
+}
+
 export async function deleteCotizacion(cotizacionId) {
     const res = await fetch(`${API_BASE}/cotizacion/delete/${cotizacionId}`, {
         method: 'DELETE',
@@ -47,13 +54,20 @@ export async function deleteCotizacion(cotizacionId) {
     return handleResponse(res, 'Error al eliminar la cotización')
 }
 
-// Endpoint pendiente de crear en backend: debe responder con el PDF del ticket (Content-Type: application/pdf).
-export async function getTicketPdf(cotizacionId) {
-    const res = await fetch(`${API_BASE}/cotizacion/${cotizacionId}/ticket`, {
+export async function getTickets(filtros = {}, pagina = 1, porPagina = 10) {
+    const params = new URLSearchParams({ pagina, por_pagina: porPagina })
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== null && valor !== undefined && valor !== '') params.append(clave, valor)
+    })
+    const res = await fetch(`${API_BASE}/cotizacion/tickets?${params}`, {
         headers: authHeaders(),
     })
-    if (!res.ok) {
-        throw new Error('Error al generar el ticket')
-    }
-    return res.blob()
+    return handleResponse(res, 'Error al cargar los tickets')
+}
+
+export async function getTicket(cotizacionId) {
+    const res = await fetch(`${API_BASE}/cotizacion/ticket/${cotizacionId}`, {
+        headers: authHeaders(),
+    })
+    return handleResponse(res, 'Error al cargar el ticket')
 }

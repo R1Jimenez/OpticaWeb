@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/LoginView.vue'
 
 const getStoredAuthUser = () => {
@@ -211,6 +211,51 @@ const router = createRouter({
             path: '/ValorHistoricodeInventario',
             name: 'ValorHistoricodeInventario',
             component: () => import('../views/reportes/HistoInvView.vue')
+        },
+        {
+            path: '/ReporteEntregas',
+            name: 'ReporteEntregas',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Entregas' }
+        },
+        {
+            path: '/ReporteEntregasComisiones',
+            name: 'ReporteEntregasComisiones',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Entregas (Comisiones)' }
+        },
+        {
+            path: '/DiarioOperaciones',
+            name: 'DiarioOperaciones',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Diario de Operaciones' }
+        },
+        {
+            path: '/OrdenesTrabajoUtilidad',
+            name: 'OrdenesTrabajoUtilidad',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Ordenes de Trabajo con Utilidad' }
+        },
+        {
+            path: '/DiarioOperacionesTotalizado',
+            name: 'DiarioOperacionesTotalizado',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Diario de Operaciones Totalizado' }
+        },
+        {
+            path: '/VentasSaldoPendiente',
+            name: 'VentasSaldoPendiente',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: { titulo: 'Ventas con Saldo Pendiente' }
+        },
+        {
+            path: '/ListadoInventario',
+            name: 'ListadoInventario',
+            component: () => import('../views/reportes/ReporteView.vue'),
+            meta: {
+                titulo: 'Listado de Inventario',
+                campos: ['codigo', 'tipoProducto', 'estatusProducto', 'nivelProducto']
+            }
         },
         {
             path: '/Atributos',

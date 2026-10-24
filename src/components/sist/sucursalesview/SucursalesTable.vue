@@ -1,7 +1,7 @@
 <style scoped>
 .table-container {
     width: 98%;
-    background: white;
+    background: linear-gradient(135deg, #F0F0F0, #F0F0F0);
     border: 2px solid #FB1C2E;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

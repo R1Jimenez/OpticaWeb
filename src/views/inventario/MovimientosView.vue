@@ -37,6 +37,13 @@
     padding-bottom: 1%;
     box-sizing: border-box;
 }
+
+/* padding-bottom no se respeta al final de un contenedor flex con scroll */
+.MovUsages::after {
+    content: '';
+    flex-shrink: 0;
+    height: 20px;
+}
 </style>
 
 <template>
@@ -45,18 +52,21 @@
         <div class="MovContenido">
             <NavBar />
             <div class="MovUsages">
-                <MovFilter />
-                <MovTable />
+                <MovFilter @consultar="filtros = $event" />
+                <MovTable :filtros="filtros" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import Header from '../../components/Header.vue';
 import NavBar from '../../components/NavBar.vue';
 import MovTable from '../../components/inv/movimientosview/MovTable.vue';
 import MovFilter from '../../components/inv/movimientosview/MovFilter.vue';
+
+const filtros = ref({})
 
 
 </script>

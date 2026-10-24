@@ -156,8 +156,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { authHeaders } from '../services/authHeader'
+
+const props = defineProps({
+    cliente: {
+        type: Object,
+        default: null
+    }
+})
 
 const searchQuery = ref('')
 const resultados = ref([])
@@ -166,7 +173,12 @@ const mostrarDropdown = ref(false)
 
 let debounceTimer = null
 
-const emit = defineEmits(['clienteSeleccionado'])
+const emit = defineEmits(['clienteSeleccionado', 'busquedaLimpiada'])
+
+// Refleja un cliente elegido fuera de la barra (p. ej. desde "En Espera")
+watch(() => props.cliente, (cliente) => {
+    if (cliente) searchQuery.value = `${cliente.nombres} ${cliente.apellidos}`
+})
 
 const onInput = () => {
     clearTimeout(debounceTimer)
@@ -174,6 +186,7 @@ const onInput = () => {
     if (searchQuery.value.trim().length === 0) {
         mostrarDropdown.value = false
         resultados.value = []
+        emit('busquedaLimpiada')
         return
     }
 

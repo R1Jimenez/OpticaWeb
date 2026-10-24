@@ -162,7 +162,7 @@ table {
                     <tbody class="bodyT">
                         <tr v-for="orden in ordenes" :key="orden.id">
                             <td>{{ orden.id }}</td>
-                            <td>N/A</td>
+                            <td>{{ orden.id_cotizacion ?? 'N/A' }}</td>
                             <td>{{ orden.sucursal?.sucursal }}</td>
                             <td>{{ orden.cliente?.nombres }} {{ orden.cliente?.apellidos }}</td>
                             <td>

@@ -71,6 +71,37 @@
     color: #FFFFFF;
     font-size: 1rem;
     font-weight: 500;
+    cursor: pointer;
+}
+
+.ConsTicks:hover {
+    background-color: #230097;
+}
+
+.ConsTicks.secundario {
+    padding: 10px 20px;
+    background-color: transparent;
+    border: 1.5px solid #130348;
+    color: #130348;
+}
+
+.ConsTicks.secundario:hover {
+    background-color: #F0F0F0;
+}
+
+.BtnGroup {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.DateWrap {
+    width: 50%;
+}
+
+.DateWrap .FechasInp {
+    width: 100%;
+    height: auto;
 }
 </style>
 
@@ -81,25 +112,45 @@
                 <text>
                     Fecha Inicial:
                 </text>
-                <input 
-                    type="text"
-                    placeholder="Consultar Fecha"
-                    class="FechasInp"
-                    v-model="searchQuery"
-                    autocomplete="off"
-                />
+                <DatePicker
+                    v-model="fechaInicio"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    locale="es"
+                    :max-date="fechaFin"
+                    class="DateWrap"
+                >
+                    <template #default="{ inputValue, inputEvents }">
+                        <input
+                            class="FechasInp"
+                            :value="inputValue"
+                            v-on="inputEvents"
+                            placeholder="dd/mm/aaaa"
+                            readonly
+                        />
+                    </template>
+                </DatePicker>
             </div>
             <div class="MinCliRows">
                 <text>
-                    Fecha Inicial:
+                    Fecha Final:
                 </text>
-                <input 
-                    type="text"
-                    placeholder="Consultar Frcha"
-                    class="FechasInp"
-                    v-model="searchQuery"
-                    autocomplete="off"
-                />
+                <DatePicker
+                    v-model="fechaFin"
+                    :masks="{ input: 'DD/MM/YYYY' }"
+                    locale="es"
+                    :min-date="fechaInicio"
+                    class="DateWrap"
+                >
+                    <template #default="{ inputValue, inputEvents }">
+                        <input
+                            class="FechasInp"
+                            :value="inputValue"
+                            v-on="inputEvents"
+                            placeholder="dd/mm/aaaa"
+                            readonly
+                        />
+                    </template>
+                </DatePicker>
             </div>
         </div>
         <div class="CliBar2">
@@ -108,21 +159,58 @@
                     Folio:
                 </text>
                 <input 
-                    type="text"
+                    type="number"
+                    min="1"
                     placeholder="Consultar Folio"
                     class="FechasInp"
-                    v-model="searchQuery"
+                    v-model="folio"
                     autocomplete="off"
+                    @keyup.enter="consultar"
                 />
             </div>
-            <button class="ConsTicks">
-                Consultar
-            </button>
+            <div class="BtnGroup">
+                <button class="ConsTicks secundario" @click="limpiar">
+                    Limpiar
+                </button>
+                <button class="ConsTicks" @click="consultar">
+                    Consultar
+                </button>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { DatePicker } from 'v-calendar'
 
+const emit = defineEmits(['consultar', 'limpiar'])
 
+const fechaInicio = ref(null)
+const fechaFin = ref(null)
+const folio = ref('')
+
+// Rango en hora local: desde el inicio del día inicial hasta el inicio del día siguiente al final
+const inicioDelDia = (fecha, diasExtra = 0) => {
+    if (!fecha) return null
+    const d = new Date(fecha)
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() + diasExtra)
+    return d.toISOString()
+}
+
+const consultar = () => {
+    emit('consultar', {
+        folio: folio.value || null,
+        desde: inicioDelDia(fechaInicio.value),
+        hasta: inicioDelDia(fechaFin.value, 1),
+    })
+}
+
+const limpiar = () => {
+    fechaInicio.value = null
+    fechaFin.value = null
+    folio.value = ''
+    emit('limpiar')
+}
 </script>
