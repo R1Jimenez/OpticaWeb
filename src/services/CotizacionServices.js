@@ -32,6 +32,21 @@ export async function getCotizacion(cotizacionId) {
     return handleResponse(res, 'Error al cargar la cotización')
 }
 
+export async function getCotizacionesByCliente(idCliente) {
+    const res = await fetch(`${API_BASE}/cotizacion/cliente/${idCliente}`, {
+        headers: authHeaders(),
+    })
+    return handleResponse(res, 'Error al cargar las cotizaciones del cliente')
+}
+
+export async function deleteCotizacion(cotizacionId) {
+    const res = await fetch(`${API_BASE}/cotizacion/delete/${cotizacionId}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    })
+    return handleResponse(res, 'Error al eliminar la cotización')
+}
+
 // Endpoint pendiente de crear en backend: debe responder con el PDF del ticket (Content-Type: application/pdf).
 export async function getTicketPdf(cotizacionId) {
     const res = await fetch(`${API_BASE}/cotizacion/${cotizacionId}/ticket`, {

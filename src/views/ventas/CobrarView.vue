@@ -7,7 +7,7 @@
     width: 100%;
     padding: .5%;
     padding-top: 1%;
-    padding-bottom: 0%;
+    padding-bottom: 1%;
     gap: 1.5%;
 }
 
@@ -52,7 +52,7 @@
             <NavBar />
             <div class="CobrarUsages">
                 <CLienteBar @clienteSeleccionado="onClienteSeleccionado"/>
-                <CobrarOptions />
+                <CobrarOptions v-model="opcionSeleccionada" :cliente="clienteSeleccionado" />
                 <FormasPago />
             </div>
         </div>
@@ -69,10 +69,10 @@ import FormasPago from '../../components/vent/cobrarview/FormasPago.vue'
 
 const clienteSeleccionado = ref(null)
 const pacienteSeleccionado = ref(null)
+const opcionSeleccionada = ref(null)
 
 const onClienteSeleccionado = (cliente) => {
     clienteSeleccionado.value = cliente
     pacienteSeleccionado.value = null
-    cargarPacientes(cliente.id)
 }
 </script>

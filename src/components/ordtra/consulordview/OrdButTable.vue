@@ -46,7 +46,7 @@
 
 <template>
     <div class="ButSecc">
-        <div class="button">
+        <div class="button" @click="$emit('detalle')">
             <span class="material-icons">topic</span>
             <span class="label">Detalle</span>
         </div>
@@ -66,4 +66,5 @@
 </template>
 
 <script setup>
+defineEmits(['detalle'])
 </script>

@@ -2,7 +2,9 @@
 .notebook-wrapper {
     position: relative;
     width: 93%;
+    margin-top: 20px;
     margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 .notebook-container {

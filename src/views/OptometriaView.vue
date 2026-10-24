@@ -29,6 +29,7 @@
     min-height: 0;
     margin-top: 1%;
     gap: .5%;
+    padding-bottom: 24px;
     overflow-y: hidden;
 }
 

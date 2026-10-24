@@ -4,7 +4,8 @@
     flex-direction: column;
     align-items: center;
     width: 98%;
-    height: 70%;
+    min-height: 70%;
+    flex-shrink: 0;
     background: radial-gradient(
         ellipse at center,
         #F0F0F0 50%,

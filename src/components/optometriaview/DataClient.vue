@@ -3,6 +3,7 @@
     position: relative;
     width: 93%;
     margin-top: 20px;
+    flex-shrink: 0;
 }
 
 .dataclient-titulo {

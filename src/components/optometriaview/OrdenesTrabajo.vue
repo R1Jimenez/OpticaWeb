@@ -181,13 +181,19 @@ table {
                             <td>N/A</td>
                             <td>N/A</td>
                             <td>
-                                <OrdButTable />
+                                <OrdButTable @detalle="ordenSeleccionada = orden" />
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </template>
+
+        <OrdDetalle
+            :orden="ordenSeleccionada"
+            :visible="ordenSeleccionada != null"
+            @close="ordenSeleccionada = null"
+        />
     </div>
 </template>
 
@@ -196,6 +202,7 @@ import { ref, watch } from 'vue'
 import OrdButTable from '../ordtra/consulordview/OrdButTable.vue'
 import OrdDetMinTable from '../ordtra/consulordview/OrdDetMinTable.vue'
 import OrdPacMinTable from '../ordtra/consulordview/OrdPacMinTable.vue'
+import OrdDetalle from './OrdDetalle.vue'
 import { getOrdenesTrabajoByCliente } from '../../services/OrdenesTrabajoServices'
 
 const props = defineProps({
@@ -206,6 +213,7 @@ const isExpanded = ref(false)
 const isLoading = ref(false)
 const errorMsg = ref(null)
 const ordenes = ref([])
+const ordenSeleccionada = ref(null)
 
 const cargarOrdenes = async (clienteId) => {
     if (clienteId == null) {

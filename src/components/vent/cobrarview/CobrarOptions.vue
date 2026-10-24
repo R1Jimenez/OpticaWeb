@@ -2,7 +2,9 @@
 .CobOpsPrincipal {
     display: flex;
     flex-direction: column;
-    height: 25%;
+    justify-content: space-between;
+    min-height: 25%;
+    flex-shrink: 0;
     width: 98%;
     background: radial-gradient(
         ellipse at top,
@@ -13,12 +15,19 @@
     border-radius: 22px;
 }
 
+.CobOpsContenido {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1% 0;
+}
+
 .CobOpsRowOps {
     display: flex;
     flex-direction: row;
     align-items: end;
     justify-content: left;
-    height: 22%;
+    height: 46px;
     width: 100%;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -29,6 +38,7 @@
     );
     padding-left: 1.5%;
     gap: .5%;
+    flex-shrink: 0;
 }
 
 .CobOpsOpButtonCob {
@@ -71,8 +81,9 @@
     align-items: center;
     justify-content: right;
     padding-right: 2%;
-    height:27%;
+    height: 56px;
     width: 100%;
+    flex-shrink: 0;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
     border-top: 2px solid #130348;
@@ -82,7 +93,6 @@
         #BCBCBC 100%
     );
     gap: 1%;
-    margin-top: auto;
 }
 
 .CobOpsTotalRow text {
@@ -115,11 +125,15 @@
                 v-for="op in opciones"
                 :key="op"
                 class="CobOpsOpButtonCob"
-                :class="{ active: selectedOp === op }"
+                :class="{ active: modelValue === op }"
                 @click="OpSelected(op)"
             >
                 <text>{{ op }}</text>
             </div>
+        </div>
+
+        <div class="CobOpsContenido" v-if="modelValue === 'Pago Inicial' && cliente">
+            <PagoInicial :cliente="cliente" />
         </div>
 
         <div class="CobOpsTotalRow">
@@ -135,7 +149,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import PagoInicial from './opcionescobrar/PagoInicial.vue'
+
+const props = defineProps({
+    modelValue: {
+        type: String,
+        default: null
+    },
+    cliente: {
+        type: Object,
+        default: null
+    }
+})
+
+const emit = defineEmits(['update:modelValue'])
 
 const opciones = [
     'En Espera',
@@ -147,9 +174,7 @@ const opciones = [
     'Devoluciones',
 ]
 
-const selectedOp = ref(null)
-
 const OpSelected = (op) => {
-    selectedOp.value = op
+    emit('update:modelValue', op)
 }
 </script>
