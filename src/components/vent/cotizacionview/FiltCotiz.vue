@@ -360,7 +360,54 @@
     color: #130348;
 }
 
+.PromoRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding-left: 2%;
+}
 
+.PromoRow text {
+    font-size: 1.2rem;
+    font-weight: 550;
+    color: #130348;
+    white-space: nowrap;
+}
+
+.PromoWrap {
+    width: 35%;
+}
+
+.PromoWrap .dropdown {
+    width: 100%;
+}
+
+.PromoItem {
+    flex-direction: column;
+    align-items: start;
+    gap: 2px;
+}
+
+.PromoNombre {
+    font-weight: 600;
+}
+
+.PromoDetalle {
+    font-size: 0.85rem;
+    color: #6C757D;
+}
+
+.PromoResumen {
+    font-size: 0.95rem;
+    color: #2E8B57;
+    font-weight: 600;
+}
+
+.PromoResumen.error {
+    color: #FB1C2E;
+}
 </style>
 
 <template>
@@ -474,6 +521,41 @@
             </div>
         </div>
         <div class="rowops">
+            <div class="PromoRow">
+                <text>Promoción:</text>
+                <div class="dropdownWrap PromoWrap">
+                    <div class="dropdown" data-cy="promocion-dropdown" @click="togglePromocionMenu">
+                        <span>{{ cotizacionStore.promocionSeleccionada?.nombre ?? 'Sin promoción' }}</span>
+                        <span class="material-icons">arrow_drop_down</span>
+                    </div>
+                    <div class="dropdownTipoVenta" v-if="showPromocionMenu" data-cy="promocion-opciones">
+                        <div v-if="loadingPromociones" class="loadingTipoVenta">Cargando...</div>
+                        <template v-else>
+                            <div class="itemTipoVenta" @click="seleccionarPromocion(null)">
+                                <span>Sin promoción</span>
+                            </div>
+                            <div v-if="promociones.length === 0" class="sinTipoVenta">
+                                No hay promociones disponibles para esta venta
+                            </div>
+                            <div
+                                v-for="promo in promociones"
+                                :key="promo.id"
+                                class="itemTipoVenta PromoItem"
+                                @click="seleccionarPromocion(promo)"
+                            >
+                                <span class="PromoNombre">{{ promo.nombre }}</span>
+                                <span class="PromoDetalle">{{ describirPromocion(promo) }}</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <span v-if="cotizacionStore.promocionSeleccionada" class="PromoResumen">
+                    {{ describirPromocion(cotizacionStore.promocionSeleccionada) }}
+                </span>
+                <span v-else-if="errorPromociones" class="PromoResumen error">{{ errorPromociones }}</span>
+            </div>
+        </div>
+        <div class="rowops">
             <div class="minroww">
                 <text>Producto o Código externo:</text>
                 <input
@@ -501,6 +583,8 @@ import { PlazoService } from '../../../services/PlazoServices'
 import { ProductosService } from '../../../services/ProductosServices'
 import { getInventarioSucursalProducto } from '../../../services/InventarioServices'
 import { getPreciosByProducto } from '../../../services/PreciosServices'
+import { getPromocionesDisponibles } from '../../../services/PromocionesServices'
+import { describirPromocion } from '../../../utils/promociones'
 import { authHeaders } from '../../../services/authHeader'
 
 const cotizacionStore = useCotizacionStore()
@@ -710,6 +794,68 @@ watch(
     (newTipoVenta) => {
         cargarPlazos(newTipoVenta?.id)
     }
+)
+
+const promociones = ref([])
+const showPromocionMenu = ref(false)
+const loadingPromociones = ref(false)
+const errorPromociones = ref(null)
+
+let solicitudPromociones = 0
+
+// Las promociones dependen de sucursal, tipo de venta, plazo y cliente; se recargan al cambiar cualquiera
+const cargarPromociones = async () => {
+    const sucursalId = cotizacionStore.sucursalSeleccionada?.id
+    const actual = ++solicitudPromociones
+    errorPromociones.value = null
+    if (!sucursalId) {
+        promociones.value = []
+        cotizacionStore.setPromocion(null)
+        return
+    }
+    loadingPromociones.value = true
+    try {
+        const disponibles = await getPromocionesDisponibles({
+            sucursalId,
+            tipoVentaId: cotizacionStore.tipoVentaSeleccionado?.id,
+            plazoId: cotizacionStore.plazoSeleccionado?.id,
+            clienteId: cotizacionStore.clienteSeleccionado?.id,
+        })
+        if (actual !== solicitudPromociones) return
+        promociones.value = disponibles
+        const seleccionada = cotizacionStore.promocionSeleccionada
+        if (seleccionada) {
+            // conserva la seleccionada solo si sigue aplicando, con sus datos actualizados
+            cotizacionStore.setPromocion(disponibles.find(p => p.id === seleccionada.id) ?? null)
+        }
+    } catch (error) {
+        if (actual !== solicitudPromociones) return
+        errorPromociones.value = error.message
+        promociones.value = []
+        cotizacionStore.setPromocion(null)
+    } finally {
+        if (actual === solicitudPromociones) loadingPromociones.value = false
+    }
+}
+
+const togglePromocionMenu = () => {
+    showPromocionMenu.value = !showPromocionMenu.value
+}
+
+const seleccionarPromocion = (promo) => {
+    cotizacionStore.setPromocion(promo)
+    showPromocionMenu.value = false
+}
+
+watch(
+    () => [
+        cotizacionStore.sucursalSeleccionada?.id,
+        cotizacionStore.tipoVentaSeleccionado?.id,
+        cotizacionStore.plazoSeleccionado?.id,
+        cotizacionStore.clienteSeleccionado?.id,
+    ],
+    cargarPromociones,
+    { immediate: true }
 )
 
 onMounted(() => {

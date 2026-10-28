@@ -247,6 +247,12 @@ tbody td {
     text-align: left;
 }
 
+.DescItem {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2E8B57;
+}
+
 .modalOverlay {
     position: fixed;
     top: 0;
@@ -376,7 +382,10 @@ tbody td {
                     </td>
                     <td>${{ Number(item.precio?.precio || 0).toFixed(2) }}</td>
                     <td>{{ item.piezas }}</td>
-                    <td>${{ totalItem(item).toFixed(2) }}</td>
+                    <td>
+                        ${{ totalItem(item).toFixed(2) }}
+                        <div v-if="cotizacionStore.pctItem(item) > 0" class="DescItem">-{{ cotizacionStore.pctItem(item) }}%</div>
+                    </td>
                     <td>
                         <button class="Eliminar" @click="quitarProducto(item)">
                             <span class="material-icons">close</span>
@@ -537,8 +546,10 @@ const imprimirMuestra = (folio = null) => {
             cantidad: item.piezas,
             nombre: item.producto.nombre,
             precioUnitario: Number(item.precio?.precio || 0),
+            descuentoPct: cotizacionStore.pctItem(item),
         })),
         descuentoPct: cotizacionStore.descuentoPorcentaje || 0,
+        promocion: cotizacionStore.promocionSeleccionada?.nombre,
         totalNormal: totalNormalSeguro.value,
         totalVenta: totalVentaVal,
         plazo: cotizacionStore.plazoSeleccionado?.plazo,

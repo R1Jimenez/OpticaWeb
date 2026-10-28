@@ -131,81 +131,54 @@
 </style>
 
 <template>
-    <div class="rowtip">
-        <table class="PromClitable">
-            <colgroup>
-                <col style="width: 15%;">
-                <col style="width: 50%;">
-            </colgroup>
-            <tbody>
-                <tr>
-                    <td>
-                        <text>
-                            Tipo:
-                        </text>
-                    </td>
-                    <td>
-                        <div class="tabrow2">
-                            <input
-                                type="radio"
-                                class="check"
-                                v-model="tipoSeleccionado"
-                            >
-                                <span>Por Cliente especifico</span>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>
-                        <div class="tabrow2">
-                            <input
-                                type="radio"
-                                class="check"
-                                v-model="tipoSeleccionado"
-                            >
-                                <span>Por Tipo de Cliente</span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="ProdRow">
-        <text>
-            Cliente
-        </text>
-        <input
-            class="bars3"
-            :value="inputValue"
-            v-on="inputEvents"
-            placeholder="Ingresar Cliente"
-            readonly
-        />
-        <button class="AgBut">
-            Agregar
-            <span class="material-icons" style="color:white; font-size:23px;">add</span>
-        </button>
-    </div>
-    <div class="ProdRow2">
-        <text>
-            Aplica en
-        </text>
-        <textarea
-            class="bars4"
-            :value="inputValue"
-            v-on="inputEvents"
-            placeholder=""
-            readonly
-            rows="5"
-        ></textarea>
-        <button class="ElBut">
-            Eliminar
-            <span class="material-icons" style="color:#130348; font-size:23px;">remove</span>
-        </button>
-    </div>
+    <PromCriterio
+        grupo="cliente"
+        :opciones="[
+            { categoria: 'clientes', etiqueta: 'Por Cliente especifico' },
+            { categoria: 'tipos_cliente', etiqueta: 'Por Tipo de Cliente' },
+        ]"
+    />
+    <PromBuscadorLista
+        :key="categoria"
+        :etiqueta="porTipo ? 'Tipo de Cliente' : 'Cliente'"
+        :placeholder="porTipo ? 'Buscar tipo de cliente' : 'Buscar cliente por nombre o apellido'"
+        :ayuda-vacio="porTipo ? 'Sin tipos de cliente: aplica a todos los clientes' : 'Sin clientes: aplica a todos los clientes'"
+        :buscar="porTipo ? buscarTipoCliente : buscarCliente"
+        :model-value="promo.condiciones[categoria]"
+        @agregar="promo.agregarCondicion(categoria, $event)"
+        @eliminar="promo.quitarCondiciones(categoria, $event)"
+    />
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import PromCriterio from './PromCriterio.vue'
+import PromBuscadorLista from './PromBuscadorLista.vue'
+import { usePromocionStore } from '../../../stores/promocion'
+import { getTiposCliente } from '../../../services/TipoClienteServices'
+import { authHeaders } from '../../../services/authHeader'
 
+const promo = usePromocionStore()
+
+const categoria = computed(() => promo.criterios.cliente)
+const porTipo = computed(() => categoria.value === 'tipos_cliente')
+
+const buscarCliente = async (termino) => {
+    const res = await fetch(
+        `http://127.0.0.1:8000/cliente/search?cliente=${encodeURIComponent(termino)}`,
+        { headers: authHeaders() }
+    )
+    if (!res.ok) throw new Error('Error al buscar clientes')
+    const clientes = await res.json()
+    return clientes.map(c => ({ id: c.id, etiqueta: `${c.nombres} ${c.apellidos}` }))
+}
+
+let tiposCache = null
+const buscarTipoCliente = async (termino) => {
+    if (!tiposCache) {
+        tiposCache = (await getTiposCliente()).map(t => ({ id: t.id, etiqueta: t.cliente }))
+    }
+    const t = termino.toLowerCase()
+    return tiposCache.filter(tc => tc.etiqueta.toLowerCase().includes(t))
+}
 </script>

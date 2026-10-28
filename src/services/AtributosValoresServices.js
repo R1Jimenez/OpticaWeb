@@ -4,6 +4,14 @@ const BASE_URL = 'http://127.0.0.1:8000/atributosvalores'
 
 export const AtributosValoresService = {
 
+    async getAll() {
+        const response = await fetch(`${BASE_URL}/all`, {
+            headers: authHeaders(),
+        })
+        if (!response.ok) throw new Error(`Error: ${response.status}`)
+        return await response.json()
+    },
+
     async getByAtributo(atributoId) {
         const response = await fetch(`${BASE_URL}/by-atributo/${atributoId}`, {
             headers: authHeaders(),
@@ -39,6 +47,6 @@ export const AtributosValoresService = {
             body: JSON.stringify(data)
         })
         if (!response.ok) throw new Error(`Error al actualizar valor: ${response.status}`)
-            return await response.json()
+        return await response.json()
     }
 }

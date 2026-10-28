@@ -52,6 +52,16 @@
     font-weight: 600;
     color: #F0F0F0;
 }
+
+.ErrorCarga {
+    width: 98%;
+    padding: 8px 14px;
+    border: 2px solid #FB1C2E;
+    border-radius: 12px;
+    background: white;
+    color: #FB1C2E;
+    font-weight: 600;
+}
 </style>
 
 <template>
@@ -66,15 +76,34 @@
                     </span>
                 </div>
                 <PromConEdits />
+                <div v-if="errorCarga" class="ErrorCarga">{{ errorCarga }}</div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Header from '../../components/Header.vue';
 import NavBar from '../../components/NavBar.vue';
 import PromConEdits from '../../components/comer/promociones/PromConEdits.vue';
+import { usePromocionStore } from '../../stores/promocion'
 
+// /Promociones?id=N abre la promoción N para editarla; sin id inicia una nueva
+const route = useRoute()
+const promo = usePromocionStore()
+const errorCarga = ref(null)
+
+watch(() => route.query.id, async (id) => {
+    errorCarga.value = null
+    promo.resetear()
+    if (!id) return
+    try {
+        await promo.cargar(Number(id))
+    } catch (e) {
+        errorCarga.value = e.message
+    }
+}, { immediate: true })
 
 </script>

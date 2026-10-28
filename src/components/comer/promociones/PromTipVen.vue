@@ -162,99 +162,169 @@
     font-size: 1rem;
     color: white;
     padding: .3rem;
+    cursor: pointer;
+}
+
+.minButt:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.ListaItem {
+    width: 100%;
+    padding: 4px 12px;
+    font-size: 1rem;
+    color: #130348;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ListaItem:hover {
+    background-color: rgba(19, 3, 72, 0.08);
+}
+
+.ListaItem.seleccionada {
+    background: radial-gradient(ellipse at center, #230097 10%, #130348 100%);
+    color: white;
+}
+
+.ListaVacia {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: #6C757D;
+    font-style: italic;
+}
+
+.Ayuda {
+    font-size: 0.8rem;
+    color: #6C757D;
+    text-align: center;
+    margin-top: 4px;
 }
 </style>
 
 <template>
-  
-        <div class="rowtip">
-            <table class="PromtipVentable">
-                <colgroup>
-                    <col style="width: 15%;">
-                    <col style="width: 50%;">
-                </colgroup>
-                <tbody>
-                    <tr>
-                        <td>
-                            <text>
-                                Tipo:
-                            </text>
-                        </td>
-                        <td>
-                            <div class="tabrow2">
-                                <input
-                                    type="radio"
-                                    class="check"
-                                    v-model="tipoSeleccionado"
-                                >
-                                <span>Por Tipo de Venta</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>
-                            <div class="tabrow">
-                                <input
-                                    type="radio"
-                                    class="check"
-                                    v-model="tipoSeleccionado"
-                                >
-                                <span>Por Plazo</span>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <PromCriterio
+        grupo="venta"
+        :opciones="[
+            { categoria: 'tipos_venta', etiqueta: 'Por Tipo de Venta' },
+            { categoria: 'plazos', etiqueta: 'Por Plazo' },
+        ]"
+    />
+    <div class="ColSuc">
+        <div class="rosu">
+            <span>{{ esPlazo ? 'Plazos' : 'Tipos de Venta' }}</span>
         </div>
-        <div class="ColSuc">
-            <div class="rosu">
-                <span>
-                    Tipos de Venta
-                </span>
-            </div>
-            <div class="rowcom">
-                <div class="mincol">
-                    <text>
-                        Disponibles
-                    </text>
-                    <div class="sucspace">
-                        <div
-                            v-for="op in opciones"
-                            :key="op"
-                            class="OpButton2"
-                        >
-                        <text>{{ op }}</text>
-                    </div>
+        <div class="rowcom">
+            <div class="mincol">
+                <text>Disponibles ({{ disponibles.length }})</text>
+                <div class="sucspace" data-cy="venta-disponibles">
+                    <div v-if="cargando" class="ListaVacia">Cargando...</div>
+                    <div v-else-if="error" class="ListaVacia">{{ error }}</div>
+                    <div v-else-if="disponibles.length === 0" class="ListaVacia">No hay más opciones</div>
+                    <div
+                        v-for="op in disponibles"
+                        :key="op.id"
+                        class="ListaItem"
+                        :class="{ seleccionada: selDisponibles.has(op.id) }"
+                        @click="alternar(selDisponibles, op.id)"
+                        @dblclick="agregar([op])"
+                    >{{ op.etiqueta }}</div>
                 </div>
             </div>
             <div class="mincolb">
-                <button class="minButt">
+                <button class="minButt" data-cy="venta-agregar" :disabled="!selDisponibles.size" @click="agregar(disponibles.filter(o => selDisponibles.has(o.id)))">
                     Agregar >
                 </button>
-                <button class="minButt">
+                <button class="minButt" :disabled="!disponibles.length" @click="agregar(disponibles)">
                     Agregar Todas >>
                 </button>
-                <button class="minButt">
-                    < Eliminar
+                <button class="minButt" :disabled="!selAplica.size" @click="quitar([...selAplica])">
+                    &lt; Eliminar
                 </button>
-                <button class="minButt">
-                    << Eliminar Todas
+                <button class="minButt" :disabled="!aplica.length" @click="quitar(aplica.map(o => o.id))">
+                    &lt;&lt; Eliminar Todas
                 </button>
             </div>
-            
             <div class="mincol">
-                <text>
-                    Aplica en
-                </text>
-                <div class="sucspace">
-
+                <text>Aplica en ({{ aplica.length }})</text>
+                <div class="sucspace" data-cy="venta-aplica">
+                    <div v-if="aplica.length === 0" class="ListaVacia">
+                        Sin selección: aplica a {{ esPlazo ? 'todos los plazos' : 'todos los tipos de venta' }}
+                    </div>
+                    <div
+                        v-for="op in aplica"
+                        :key="op.id"
+                        class="ListaItem"
+                        :class="{ seleccionada: selAplica.has(op.id) }"
+                        @click="alternar(selAplica, op.id)"
+                        @dblclick="quitar([op.id])"
+                    >{{ op.etiqueta }}</div>
                 </div>
             </div>
         </div>
+        <div class="Ayuda">Haz clic para seleccionar o doble clic para mover</div>
     </div>
 </template>
 
 <script setup>
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import PromCriterio from './PromCriterio.vue'
+import { usePromocionStore } from '../../../stores/promocion'
+import { TipoVentaService } from '../../../services/TipoVentaServices'
+import { PlazoService } from '../../../services/PlazoServices'
 
+const promo = usePromocionStore()
+
+const tiposVenta = ref([])
+const plazos = ref([])
+const cargando = ref(false)
+const error = ref(null)
+const selDisponibles = reactive(new Set())
+const selAplica = reactive(new Set())
+
+const esPlazo = computed(() => promo.criterios.venta === 'plazos')
+const categoria = computed(() => promo.criterios.venta)
+const catalogo = computed(() => (esPlazo.value ? plazos.value : tiposVenta.value))
+const aplica = computed(() => promo.condiciones[categoria.value])
+const disponibles = computed(() => catalogo.value.filter(o => !aplica.value.some(a => a.id === o.id)))
+
+const limpiarSeleccion = () => {
+    selDisponibles.clear()
+    selAplica.clear()
+}
+
+watch(categoria, limpiarSeleccion)
+
+const alternar = (seleccion, id) => {
+    if (seleccion.has(id)) seleccion.delete(id)
+    else seleccion.add(id)
+}
+
+const agregar = (opciones) => {
+    opciones.forEach(o => promo.agregarCondicion(categoria.value, o))
+    limpiarSeleccion()
+}
+
+const quitar = (ids) => {
+    promo.quitarCondiciones(categoria.value, ids)
+    limpiarSeleccion()
+}
+
+onMounted(async () => {
+    cargando.value = true
+    try {
+        const [tv, pl] = await Promise.all([TipoVentaService.getAll(), PlazoService.getAll()])
+        tiposVenta.value = tv.map(t => ({ id: t.id, etiqueta: t.venta }))
+        const nombreTipo = Object.fromEntries(tv.map(t => [t.id, t.venta]))
+        plazos.value = pl.map(p => ({
+            id: p.id,
+            etiqueta: nombreTipo[p.tipo_venta_id] ? `${p.plazo} (${nombreTipo[p.tipo_venta_id]})` : p.plazo,
+        }))
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        cargando.value = false
+    }
+})
 </script>

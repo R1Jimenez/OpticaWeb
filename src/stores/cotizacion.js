@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
 import { createCotizacion } from '../services/CotizacionServices'
 import { getTipoCliente } from '../services/TipoClienteServices'
+import { porcentajeItem } from '../utils/promociones'
 
 export const useCotizacionStore = defineStore('cotizacion', () => {
     const clienteSeleccionado = ref(null)
@@ -15,6 +16,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
     const items = ref([])
     const descuentoPorcentaje = ref(0)
     const tipoClienteSeleccionado = ref(null)
+    const promocionSeleccionada = ref(null)
 
     const totalNormal = computed(() => items.value.reduce((acc, item) => {
         const precio = Number(item.precio?.precio) || 0
@@ -22,7 +24,19 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         return acc + precio * piezas
     }, 0))
 
-    const totalVenta = computed(() => totalNormal.value - (totalNormal.value * descuentoPorcentaje.value / 100))
+    // descuento del renglon: tipo de cliente + promocion (si el producto es elegible)
+    function pctItem(item) {
+        return porcentajeItem(descuentoPorcentaje.value, promocionSeleccionada.value, item.producto)
+    }
+
+    const totalVenta = computed(() => items.value.reduce((acc, item) => {
+        const subtotal = (Number(item.precio?.precio) || 0) * (Number(item.piezas) || 0)
+        return acc + subtotal * (100 - pctItem(item)) / 100
+    }, 0))
+
+    function setPromocion(promocion) {
+        promocionSeleccionada.value = promocion
+    }
 
     async function cargarDescuentoCliente(cliente) {
         descuentoPorcentaje.value = 0
@@ -116,6 +130,7 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
                 producto_id: item.producto.id,
                 cantidad: item.piezas,
             })),
+            promocion_id: promocionSeleccionada.value?.id ?? null,
         }
 
         const faltantes = ['sucursal_id', 'usuario_id', 'id_cliente', 'id_paciente', 'tipo_venta', 'plazo', 'promesa_entrega']
@@ -145,8 +160,12 @@ export const useCotizacionStore = defineStore('cotizacion', () => {
         pagoInicial,
         items,
         descuentoPorcentaje,
+        tipoClienteSeleccionado,
+        promocionSeleccionada,
         totalNormal,
         totalVenta,
+        pctItem,
+        setPromocion,
         setCliente,
         limpiarCliente,
         setPaciente,

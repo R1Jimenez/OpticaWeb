@@ -27,24 +27,29 @@ export function abrirVentanaTicket() {
 
 /**
  * datos: { folio, sucursal, fecha: Date, vendedor, cliente: { nombre, direccion, telefono, tipo },
- *          paciente, items: [{ cantidad, nombre, precioUnitario }], descuentoPct, totalNormal,
- *          totalVenta, plazo, pagoInicial, pagoRestante, promesaEntrega }
+ *          paciente, items: [{ cantidad, nombre, precioUnitario, descuentoPct? }], descuentoPct, promocion?,
+ *          totalNormal, totalVenta, plazo, pagoInicial, pagoRestante, promesaEntrega }
+ * descuentoPct del item tiene prioridad sobre el general (las promociones pueden aplicar solo a algunos productos).
  * Sin folio se imprime como cotización muestra.
  */
 export function escribirTicket(ventana, datos) {
     if (!ventana) return
 
     const esTicketReal = datos.folio != null
-    const descuentoPct = Number(datos.descuentoPct) || 0
+    const descuentoGeneral = Number(datos.descuentoPct) || 0
     const totalNormal = Number(datos.totalNormal) || 0
     const totalVenta = Number(datos.totalVenta) || 0
     const ahorro = totalNormal - totalVenta
     const titulo = esTicketReal ? `Cotización #${escapeHtml(datos.folio)}` : 'Cotización Muestra'
     const cliente = datos.cliente ?? {}
+    const items = datos.items ?? []
+    const pctDe = (item) => (item.descuentoPct ?? null) !== null ? Number(item.descuentoPct) : descuentoGeneral
+    const porcentajes = [...new Set(items.map(pctDe))]
+    const etiquetaDescuento = porcentajes.length === 1 ? `Descuento (${escapeHtml(porcentajes[0])}%)` : 'Descuento'
 
-    const filas = (datos.items ?? []).map(item => {
+    const filas = items.map(item => {
         const precioUnit = Number(item.precioUnitario || 0)
-        const descuentoUnit = precioUnit * descuentoPct / 100
+        const descuentoUnit = precioUnit * pctDe(item) / 100
         const subtotal = (precioUnit - descuentoUnit) * item.cantidad
 
         return `
@@ -162,7 +167,8 @@ export function escribirTicket(ventana, datos) {
             </table>
             <hr>
             <p>Total Normal: ${dinero(totalNormal)}</p>
-            <p class="ahorro">Descuento (${escapeHtml(descuentoPct)}%): -${dinero(ahorro)}</p>
+            ${datos.promocion ? `<p>Promoción: ${escapeHtml(datos.promocion)}</p>` : ''}
+            <p class="ahorro">${etiquetaDescuento}: -${dinero(ahorro)}</p>
             <p class="total">Total: ${dinero(totalVenta)}</p>
             ${bloquePago}
             <hr>

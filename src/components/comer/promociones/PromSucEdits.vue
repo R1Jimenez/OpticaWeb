@@ -261,6 +261,66 @@ table text {
     font-size: 1rem;
     color: white;
     padding: .3rem;
+    cursor: pointer;
+}
+
+.minButt:hover:not(:disabled) {
+    filter: brightness(1.2);
+}
+
+.minButt:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.SucItem {
+    width: 100%;
+    padding: 4px 12px;
+    font-size: 1rem;
+    color: #130348;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.SucItem:hover {
+    background-color: rgba(19, 3, 72, 0.08);
+}
+
+.SucItem.seleccionada {
+    background: radial-gradient(
+        ellipse at center,
+        #230097 10%,
+        #130348 100%
+    );
+    color: white;
+}
+
+.SucVacio {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: #6C757D;
+    font-style: italic;
+}
+
+.bars:disabled,
+.bars2:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.check {
+    accent-color: #130348;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.AyudaSuc {
+    font-size: 0.8rem;
+    color: #6C757D;
+    text-align: center;
+    margin-top: 4px;
 }
 </style>
 
@@ -270,10 +330,13 @@ table text {
         Nombre:
     </text>
     <input
-        type=int
+        v-model="promo.nombre"
+        type="text"
+        maxlength="150"
         placeholder="Ingresar Nombre"
         class="bars"
         autocomplete="off"
+        data-cy="promo-nombre"
     />
 </div>
 <div class="SucRow2">
@@ -282,10 +345,15 @@ table text {
             Descuento (%)
         </text>
         <input
-            type=int
+            v-model="promo.descuento"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
             placeholder="Ingresar Descuento"
             class="bars"
             autocomplete="off"
+            data-cy="promo-descuento"
         />
     </div>
     <div class="minrow">
@@ -293,10 +361,15 @@ table text {
             Descuento Máx. Vendedor (%)
         </text>
         <input
-            type=int
+            v-model="promo.descuentoMaxVendedor"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
             placeholder="Ingresar Descuento"
             class="bars"
             autocomplete="off"
+            data-cy="promo-descuento-vendedor"
         />
     </div>
 </div>
@@ -311,27 +384,29 @@ table text {
                     </text>
                 </td>
                 <td>
-                    <div class="tabrow">
+                    <label class="tabrow">
                         <input
+                            v-model="promo.acumulativa"
                             type="checkbox"
                             class="check"
-                            v-model="tipoSeleccionado"
+                            data-cy="promo-acumulativa"
                         >
                         <span>Acumulativa</span>
-                    </div>
+                    </label>
                 </td>
             </tr>
             <tr>
                 <td></td>
                 <td>
-                    <div class="tabrow">
+                    <label class="tabrow">
                         <input
+                            v-model="promo.permanente"
                             type="checkbox"
                             class="check"
-                            v-model="tipoSeleccionado"
+                            data-cy="promo-permanente"
                         >
                         <span>Permanente</span>
-                    </div>
+                    </label>
                 </td>
             </tr>
         </tbody>
@@ -339,7 +414,7 @@ table text {
     <div class="SuCol">
         <div class="SubTitRow">
             <text>
-                Vigencia
+                Vigencia{{ promo.permanente ? ' (no aplica para promociones permanentes)' : '' }}
             </text>
         </div>
         <div class="SuColRow">
@@ -348,16 +423,19 @@ table text {
                     Inicio
                 </text>
                 <DatePicker
-                    v-model="fechaInicio"
+                    v-model="promo.fechaInicio"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     locale="es"
+                    :max-date="promo.fechaFin"
                 >
                     <template #default="{ inputValue, inputEvents }">
                         <input
                             class="bars2"
-                            :value="inputValue"
-                            v-on="inputEvents"
+                            :value="promo.permanente ? '' : inputValue"
+                            v-on="promo.permanente ? {} : inputEvents"
                             placeholder="dd/mm/aaaa"
+                            :disabled="promo.permanente"
+                            data-cy="promo-inicio"
                             readonly
                         />
                     </template>
@@ -368,17 +446,19 @@ table text {
                     Fin
                 </text>
                 <DatePicker
-                    v-model="fechaFin"
+                    v-model="promo.fechaFin"
                     :masks="{ input: 'DD/MM/YYYY' }"
                     locale="es"
-                    :min-date="fechaInicio"
+                    :min-date="promo.fechaInicio"
                 >
                     <template #default="{ inputValue, inputEvents }">
                         <input
                             class="bars2"
-                            :value="inputValue"
-                            v-on="inputEvents"
+                            :value="promo.permanente ? '' : inputValue"
+                            v-on="promo.permanente ? {} : inputEvents"
                             placeholder="dd/mm/aaaa"
+                            :disabled="promo.permanente"
+                            data-cy="promo-fin"
                             readonly
                         />
                     </template>
@@ -397,62 +477,99 @@ table text {
     <div class="rowcom">
         <div class="mincol">
             <text>
-                Disponibles
+                Disponibles ({{ disponibles.length }})
             </text>
-            <div class="sucspace">
+            <div class="sucspace" data-cy="suc-disponibles">
+                <div v-if="cargando" class="SucVacio">Cargando sucursales...</div>
+                <div v-else-if="errorSucursales" class="SucVacio">{{ errorSucursales }}</div>
+                <div v-else-if="disponibles.length === 0" class="SucVacio">Todas las sucursales están agregadas</div>
                 <div
-                    v-for="op in opciones"
-                    :key="op"
-                    class="OpButton2"
-                >
-                    <text>{{ op }}</text>
-                </div>
+                    v-for="s in disponibles"
+                    :key="s.id"
+                    class="SucItem"
+                    :class="{ seleccionada: selDisponibles.has(s.id) }"
+                    @click="alternar(selDisponibles, s.id)"
+                    @dblclick="mover([s.id], true)"
+                >{{ s.sucursal }}</div>
             </div>
         </div>
 
         <div class="mincolb">
-            <button class="minButt">
+            <button class="minButt" data-cy="suc-agregar" :disabled="!selDisponibles.size" @click="mover([...selDisponibles], true)">
                 Agregar >
             </button>
-            <button class="minButt">
+            <button class="minButt" data-cy="suc-agregar-todas" :disabled="!disponibles.length" @click="mover(disponibles.map(s => s.id), true)">
                 Agregar Todas >>
             </button>
-            <button class="minButt">
+            <button class="minButt" data-cy="suc-eliminar" :disabled="!selAplica.size" @click="mover([...selAplica], false)">
                 < Eliminar
             </button>
-            <button class="minButt">
+            <button class="minButt" data-cy="suc-eliminar-todas" :disabled="!aplica.length" @click="mover(aplica.map(s => s.id), false)">
                 << Eliminar Todas
             </button>
         </div>
 
         <div class="mincol">
             <text>
-                Aplica en
+                Aplica en ({{ aplica.length }})
             </text>
-            <div class="sucspace">
-
+            <div class="sucspace" data-cy="suc-aplica">
+                <div v-if="!cargando && aplica.length === 0" class="SucVacio">Sin sucursales agregadas</div>
+                <div
+                    v-for="s in aplica"
+                    :key="s.id"
+                    class="SucItem"
+                    :class="{ seleccionada: selAplica.has(s.id) }"
+                    @click="alternar(selAplica, s.id)"
+                    @dblclick="mover([s.id], false)"
+                >{{ s.sucursal }}</div>
             </div>
         </div>
     </div>
+    <div class="AyudaSuc">Haz clic para seleccionar o doble clic para mover una sucursal</div>
 </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { DatePicker } from 'v-calendar'
+import { usePromocionStore } from '../../../stores/promocion'
+import { getSucursales } from '../../../services/SucursalesServices'
 
-const opciones = [
-    'Almacen Central',
-    'Jilotepec',
-    'Plaza Juarez Mall',
-    'Puntos Dumount',
-    'Servicio a Industrias',
-    'Smart La Cuesta',
-    'Smart Torres Del Sur'
-]
+const promo = usePromocionStore()
 
-const selectedOp = ref(null)
-const tipoSeleccionado = ref(false)
-const fechaInicio = ref('')
-const fechaFin = ref('')
+const sucursales = ref([])
+const cargando = ref(false)
+const errorSucursales = ref(null)
+const selDisponibles = reactive(new Set())
+const selAplica = reactive(new Set())
+
+const disponibles = computed(() => sucursales.value.filter(s => !promo.sucursalesIds.includes(s.id)))
+const aplica = computed(() => sucursales.value.filter(s => promo.sucursalesIds.includes(s.id)))
+
+const alternar = (seleccion, id) => {
+    if (seleccion.has(id)) seleccion.delete(id)
+    else seleccion.add(id)
+}
+
+const mover = (ids, agregar) => {
+    if (agregar) {
+        promo.sucursalesIds = [...promo.sucursalesIds, ...ids.filter(id => !promo.sucursalesIds.includes(id))]
+    } else {
+        promo.sucursalesIds = promo.sucursalesIds.filter(id => !ids.includes(id))
+    }
+    selDisponibles.clear()
+    selAplica.clear()
+}
+
+onMounted(async () => {
+    cargando.value = true
+    try {
+        sucursales.value = await getSucursales()
+    } catch (e) {
+        errorSucursales.value = e.message
+    } finally {
+        cargando.value = false
+    }
+})
 </script>

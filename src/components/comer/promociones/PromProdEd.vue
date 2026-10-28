@@ -131,81 +131,53 @@
 </style>
 
 <template>
-    <div class="rowtip">
-        <table class="PromProdtable">
-            <colgroup>
-                <col style="width: 15%;">
-                <col style="width: 50%;">
-            </colgroup>
-            <tbody>
-                <tr>
-                    <td>
-                        <text>
-                            Tipo:
-                        </text>
-                    </td>
-                    <td>
-                        <div class="tabrow2">
-                            <input
-                                type="radio"
-                                class="check"
-                                v-model="tipoSeleccionado"
-                            >
-                                <span>Por Producto especifico</span>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>
-                        <div class="tabrow2">
-                            <input
-                                type="radio"
-                                class="check"
-                                v-model="tipoSeleccionado"
-                            >
-                                <span>Por atributo de producto</span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="ProdRow">
-        <text>
-            Producto
-        </text>
-        <input
-            class="bars3"
-            :value="inputValue"
-            v-on="inputEvents"
-            placeholder="Ingresar Producto"
-            readonly
-        />
-        <button class="AgBut">
-            Agregar
-            <span class="material-icons" style="color:white; font-size:23px;">add</span>
-        </button>
-    </div>
-    <div class="ProdRow2">
-        <text>
-            Aplica en
-        </text>
-        <textarea
-            class="bars4"
-            :value="inputValue"
-            v-on="inputEvents"
-            placeholder=""
-            readonly
-            rows="5"
-        ></textarea>
-        <button class="ElBut">
-            Eliminar
-            <span class="material-icons" style="color:#130348; font-size:23px;">remove</span>
-        </button>
-    </div>
+    <PromCriterio
+        grupo="producto"
+        :opciones="[
+            { categoria: 'productos', etiqueta: 'Por Producto especifico' },
+            { categoria: 'atributos_valores', etiqueta: 'Por atributo de producto' },
+        ]"
+    />
+    <PromBuscadorLista
+        :key="categoria"
+        :etiqueta="porAtributo ? 'Atributo' : 'Producto'"
+        :placeholder="porAtributo ? 'Buscar atributo o valor (ej. Marca, RayBan)' : 'Buscar por código, nombre o código externo'"
+        :ayuda-vacio="porAtributo ? 'Sin atributos: aplica a todos los productos' : 'Sin productos: aplica a todos los productos'"
+        :buscar="porAtributo ? buscarAtributo : buscarProducto"
+        :model-value="promo.condiciones[categoria]"
+        @agregar="promo.agregarCondicion(categoria, $event)"
+        @eliminar="promo.quitarCondiciones(categoria, $event)"
+    />
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import PromCriterio from './PromCriterio.vue'
+import PromBuscadorLista from './PromBuscadorLista.vue'
+import { usePromocionStore } from '../../../stores/promocion'
+import { ProductosService } from '../../../services/ProductosServices'
+import { AtributosService } from '../../../services/AtributosService'
+import { AtributosValoresService } from '../../../services/AtributosValoresServices'
 
+const promo = usePromocionStore()
+
+const categoria = computed(() => promo.criterios.producto)
+const porAtributo = computed(() => categoria.value === 'atributos_valores')
+
+const buscarProducto = async (termino) => {
+    const productos = await ProductosService.buscar(termino)
+    return productos.map(p => ({ id: p.id, etiqueta: `${p.codigo} - ${p.nombre} (${p.codigo_externo})` }))
+}
+
+// Catálogo pequeño: se descarga una vez y se filtra en el navegador
+let valoresCache = null
+const buscarAtributo = async (termino) => {
+    if (!valoresCache) {
+        const [atributos, valores] = await Promise.all([AtributosService.getAll(), AtributosValoresService.getAll()])
+        const nombreAtributo = Object.fromEntries(atributos.map(a => [a.id, a.atributo]))
+        valoresCache = valores.map(v => ({ id: v.id, etiqueta: `${nombreAtributo[v.atributo_id] ?? 'Atributo'}: ${v.descripcion}` }))
+    }
+    const t = termino.toLowerCase()
+    return valoresCache.filter(v => v.etiqueta.toLowerCase().includes(t)).slice(0, 30)
+}
 </script>

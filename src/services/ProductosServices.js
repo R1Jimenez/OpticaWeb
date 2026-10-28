@@ -52,6 +52,16 @@ export const ProductosService = {
         return await response.json()
     },
 
+    // Busca en todo el catálogo por código, nombre o código externo
+    async buscar(termino, limite = 15) {
+        const params = new URLSearchParams({ q: termino, limite })
+        const response = await fetch(`${BASE_URL}/buscar?${params}`, {
+            headers: authHeaders(),
+        })
+        if (!response.ok) throw new Error(`Error: ${response.status}`)
+        return await response.json()
+    },
+
     async update(id, payload) {
         const response = await fetch(`${BASE_URL}/update/${id}`, {
             method: 'POST',
