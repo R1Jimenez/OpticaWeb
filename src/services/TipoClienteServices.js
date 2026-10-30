@@ -7,7 +7,8 @@ async function handleResponse(response, fallbackError) {
         let detail = fallbackError
         try {
             const err = await response.json()
-            detail = err.detail || fallbackError
+            if (typeof err.detail === 'string') detail = err.detail
+            else if (Array.isArray(err.detalle)) detail = err.detalle.map(d => d.msg).join('; ')
         } catch {
             // response body wasn't JSON, keep fallback
         }
@@ -46,4 +47,12 @@ export async function updateTipoCliente(id, payload) {
         body: JSON.stringify(payload),
     })
     return handleResponse(res, 'Error al actualizar tipo de cliente')
+}
+
+export async function deleteTipoCliente(id) {
+    const res = await fetch(`${API_BASE}/tipo_cliente/delete/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    })
+    return handleResponse(res, 'Error al eliminar tipo de cliente')
 }

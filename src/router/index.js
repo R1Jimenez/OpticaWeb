@@ -53,6 +53,16 @@ const router = createRouter({
             component: () => import('../views/sistema/UsersView.vue')
         },
         {
+            path: '/Accesos',
+            name: 'Accesos',
+            component: () => import('../views/sistema/HistorialConexionesView.vue')
+        },
+        {
+            path: '/TiposCliente',
+            name: 'TiposCliente',
+            component: () => import('../views/sistema/TiposClienteView.vue')
+        },
+        {
             path: '/Ventas',
             name: 'Ventas',
             component: () => import('../views/VentasMenuView.vue')

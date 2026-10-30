@@ -296,10 +296,10 @@ const dropdownMenus = [
     icon: 'settings',
     label: 'Sistema',
     items: [
-      { label: 'Accesos',           icon: 'lock',   route: '/sistema/permisos' },
+      { label: 'Accesos',           icon: 'lock',   route: '/Accesos' },
       { label: 'Sucursales',        icon: 'gite',   route: '/Sucursales' },
       { label: 'Usuarios',          icon: 'person', route: '/Usuarios' },
-      { label: 'Tipos de Cliente',  icon: 'note',   route: '/ruta2' },
+      { label: 'Tipos de Cliente',  icon: 'note',   route: '/TiposCliente' },
     ],
   },
   {

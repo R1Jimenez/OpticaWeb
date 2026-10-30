@@ -106,6 +106,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { registrarSalida } from '../services/ConexionesServices'
 
 const emit = defineEmits(['cerrar'])
 const router = useRouter()
@@ -120,6 +121,13 @@ const confirmarSalida = () => {
 }
 
 const salir = async () => {
+    // se registra antes de borrar el token; si falla (p. ej. token vencido) la sesión se cierra igual
+    try {
+        await registrarSalida()
+    } catch (error) {
+        console.error('No se pudo registrar la salida:', error)
+    }
+
     authStore.logout()
 
     // Cleanup possible standalone token keys used by mobile/web flows.
