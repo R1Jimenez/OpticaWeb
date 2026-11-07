@@ -122,11 +122,14 @@ const dropdownAbierto = ref(null)
 
 const cargarAtributos = async () => {
     try {
-        const lista = await AtributosService.getAll()
+        // una sola peticion de valores en lugar de una por atributo
+        const [lista, todosValores] = await Promise.all([AtributosService.getAll(), AtributosValoresService.getAll()])
         store.setAtributos(lista)
 
         for (const atributo of lista) {
-            const valores = await AtributosValoresService.getByAtributo(atributo.id)
+            const valores = todosValores
+                .filter(v => v.atributo_id === atributo.id)
+                .sort((a, b) => String(a.clave).localeCompare(String(b.clave), 'es', { numeric: true }))
             valoresPorAtributo.value[atributo.id] = valores
 
             const pendiente = store.seleccionados[atributo.id]

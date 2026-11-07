@@ -265,7 +265,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { getCuentasPorCobrar, aplicarAbonos, marcarIncobrable } from '../../../../services/AbonosServices'
+import { getCuentasPorCobrar, marcarIncobrable } from '../../../../services/AbonosServices'
+import { cobrarAbonos } from '../../../../services/PagosServices'
+import { useCobroStore } from '../../../../stores/cobro'
+import { useSucursalStore } from '../../../../stores/sucursal'
 import { parsearFechaUTC, formatearMoneda } from '../../../../utils/formato'
 
 const props = defineProps({
@@ -276,6 +279,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:total'])
+
+const cobro = useCobroStore()
+const sucursalStore = useSucursalStore()
 
 const cuentas = ref([])
 const abonos = ref({})
@@ -379,13 +385,31 @@ async function aplicar() {
         aviso.value = { tipo: 'error', texto: 'Capture al menos un abono' }
         return false
     }
+    const sucursalId = sucursalStore.sucursalSeleccionada?.id
+    if (!sucursalId) {
+        aviso.value = { tipo: 'error', texto: 'Seleccione la sucursal en la que se cobra' }
+        return false
+    }
+    if (!cobro.cubreTotal) {
+        aviso.value = {
+            tipo: 'error',
+            texto: cobro.cambioInvalido ? 'El excedente solo puede entregarse como cambio en efectivo' : 'El total pagado no cubre los abonos',
+        }
+        return false
+    }
 
     procesando.value = true
     try {
-        await aplicarAbonos(payload)
-        const total = formatearMoneda(totalAbonos.value)
+        const pago = await cobrarAbonos({
+            sucursal_id: sucursalId,
+            abonos: payload,
+            formas: cobro.payloadFormas(),
+            observaciones: cobro.observaciones.trim() || null,
+        })
+        cobro.limpiar()
         await cargarCuentas()
-        aviso.value = { tipo: 'exito', texto: `Se aplicaron abonos por ${total}` }
+        const cambio = Number(pago.cambio) > 0 ? ` Cambio a entregar: ${formatearMoneda(pago.cambio)}.` : ''
+        aviso.value = { tipo: 'exito', texto: `Abonos registrados (cobro #${pago.id}) por ${formatearMoneda(pago.total)}.${cambio}` }
         return true
     } catch (e) {
         aviso.value = { tipo: 'error', texto: e.message }

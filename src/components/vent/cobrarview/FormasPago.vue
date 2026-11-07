@@ -2,9 +2,7 @@
 .FormPaPrincipal {
     display: flex;
     flex-direction: column;
-    align-items: center;
     width: 98%;
-    min-height: 70%;
     flex-shrink: 0;
     background: radial-gradient(
         ellipse at center,
@@ -13,63 +11,85 @@
     );
     border: 2px solid #FB1C2E;
     border-radius: 22px;
+    overflow: hidden;
+}
+
+.FormPaHeader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    background: radial-gradient(
+        ellipse at left,
+        #130348 10%,
+        #07072C 100%
+    );
+    border-bottom: 1px solid #FB1C2E;
+    color: white;
+}
+
+.FormPaHeader .Titulo {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.FormPaHeader .PorCobrar {
+    font-size: 0.95rem;
 }
 
 .FormPaPagsRow {
     display: flex;
     flex-direction: row;
-    align-items: center;
     justify-content: space-between;
-    width: 100%;
-    height: 70.5%;
-    padding-top: .5%;
-    padding-left: 2%;
-    padding-right: 2%;
+    gap: 2%;
+    padding: 14px 2% 0;
 }
 
 .FormPaPagosBox {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 49%;
-    border-radius: 20px;
-    border: 2.5px solid #130348;
-    background: radial-gradient(
-        ellipse at center,
-        #F0F0F0 0%,
-        #BCBCBC 100%
-    );
+    flex: 1;
+    border-radius: 16px;
+    border: 1.5px solid #130348;
+    background: white;
     overflow: hidden;
 }
 
-.FormPathead tr {
-    background-color: #F5F5F5;
+.FormPaPagosBox table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
 }
 
-.FormPathead th {
-    padding: 9px 12px;
+.FormPaPagosBox th {
+    padding: 8px 12px;
+    background-color: #F5F5F5;
     text-align: left;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #130348;
-    white-space: nowrap;
-    border-bottom: 1px solid #BCBCBC;
+    border-bottom: 1px solid #130348;
 }
 
-th:nth-child(1), td:nth-child(1) { width: 10%; }
-th:nth-child(2), td:nth-child(2) { width: 75%; }
-th:nth-child(3), td:nth-child(3) { width: 15%; }
-
-.Formpatbody td {
-    padding: 8px 12px;
+.FormPaPagosBox td {
+    padding: 5px 12px;
+    font-size: 0.95rem;
+    color: #130348;
+    border-bottom: 1px solid #F0F0F0;
     vertical-align: middle;
 }
 
-.Formpatable-input {
+.FormPaPagosBox tr:last-child td {
+    border-bottom: none;
+}
+
+.FormPaPagosBox col.Forma { width: 34%; }
+.FormPaPagosBox col.Importe { width: 26%; }
+
+.FormPaInput {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     border: 1px solid #BCBCBC;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 0.9rem;
     color: #130348;
     outline: none;
@@ -77,201 +97,200 @@ th:nth-child(3), td:nth-child(3) { width: 15%; }
     background: white;
 }
 
-.Formpatable-input:focus {
+.FormPaInput.Importe {
+    text-align: right;
+}
+
+.FormPaInput:focus {
     border-color: #130348;
-    border-width: 2px;
+    box-shadow: 0 0 0 1px #130348;
 }
 
-.FormapaTotalesRow {
+.FormPaInput:disabled {
+    background: #F0F0F0;
+    color: #6C757D;
+}
+
+.FormPaResumen {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-    width: 100%;
-    height: 10%;
+    align-items: stretch;
+    gap: 2%;
+    padding: 14px 2% 16px;
 }
 
-.FormapaPagadosColumn {
+.FormPaTotales {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    height: 100%;
-    width: 25%;
+    gap: 14px;
 }
 
-.FormapaPagadosColumn text {
-    font-size: 1.2rem;
+.FormPaTotal {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 170px;
+    padding: 8px 16px;
+    border: 1.5px solid #130348;
+    border-radius: 16px;
+    background: white;
+}
+
+.FormPaTotal span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6C757D;
+}
+
+.FormPaTotal strong {
+    font-size: 1.4rem;
     color: #130348;
 }
 
-.FormapaNumPag {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    width: 65%;
-    height: 65%;
-    background-color: white;
-    border-radius: 15px;
-    border: 1px solid #130348;
+.FormPaTotal.negativa strong { color: #FB1C2E; }
+.FormPaTotal.positiva strong { color: #2E8B57; }
+
+.FormPaTotal small {
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
-.FormapaObsRow {
+.FormPaTotal.negativa small { color: #FB1C2E; }
+.FormPaTotal.positiva small { color: #2E8B57; }
+
+.FormPaObs {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    height: 20%;
-    width: 100%;
-    gap: 1%;
+    flex-direction: column;
+    flex: 1;
+    gap: 4px;
 }
 
-.FormapaObsRow text {
-    font-size: 1.2rem;
+.FormPaObs label {
+    font-size: 0.95rem;
+    font-weight: 600;
     color: #130348;
 }
 
-.Formapaobstext {
-    align-items: center;
-    justify-content: center;
-    width: 50%;
-    height: 60%;
-    border: 1px solid #130348;
-    border-radius: 15px;
-    background-color: white;
+.FormPaObs textarea {
+    flex: 1;
+    min-height: 60px;
+    padding: 8px 12px;
+    border: 1.5px solid #130348;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #130348;
+    resize: vertical;
+    outline: none;
 }
 </style>
 
 <template>
     <div class="FormPaPrincipal">
+        <div class="FormPaHeader">
+            <span class="Titulo">Formas de Pago</span>
+            <span v-if="cobro.totalGlobal > 0" class="PorCobrar">Por cobrar: {{ formatearMoneda(cobro.totalGlobal) }}</span>
+        </div>
         <div class="FormPaPagsRow">
-            <div class="FormPaPagosBox">
+            <div v-for="(columna, i) in FORMAS_PAGO" :key="i" class="FormPaPagosBox">
                 <table>
-                    <thead class="FormPathead">
+                    <colgroup>
+                        <col class="Forma">
+                        <col>
+                        <col class="Importe">
+                    </colgroup>
+                    <thead>
                         <tr>
                             <th>Forma de Pago</th>
                             <th>Referencia</th>
                             <th>Importe</th>
                         </tr>
                     </thead>
-                    <tbody class="Formpatbody">
-                        <tr>
-                            <td>Efectivo</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Nota de Crédito</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Vale</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Cheque</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Tarjeta de Credito</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Credito</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Cortesía</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="FormPaPagosBox">
-                <table>
-                    <thead class="FormPathead">
-                        <tr>
-                            <th>Forma de Pago</th>
-                            <th>Referencia</th>
-                            <th>Importe</th>
-                        </tr>
-                    </thead>
-                    <tbody class="Formpatbody">
-                        <tr>
-                            <td>Deposito Bancario</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Vale de Descuento</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Bancomer</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Banamex</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>Santander</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>AMEX</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
-                        </tr>
-                        <tr>
-                            <td>CLIP</td>
-                            <td><input class="Formpatable-input" type="text" placeholder="Referencia" /></td>
-                            <td><input class="Formpatable-input" type="number" placeholder="0.00" /></td>
+                    <tbody>
+                        <tr v-for="forma in columna" :key="forma">
+                            <td>{{ forma }}</td>
+                            <template v-if="forma === CREDITO">
+                                <td></td>
+                                <td>
+                                    <input
+                                        class="FormPaInput Importe"
+                                        :value="Number(cobro.credito).toFixed(2)"
+                                        title="Saldo que queda en cuentas por cobrar"
+                                        data-cy="forma-credito"
+                                        disabled
+                                    />
+                                </td>
+                            </template>
+                            <template v-else>
+                                <td>
+                                    <input
+                                        v-if="forma !== EFECTIVO"
+                                        v-model="cobro.formas[forma].referencia"
+                                        class="FormPaInput"
+                                        maxlength="100"
+                                        :aria-label="`Referencia ${forma}`"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        v-model="cobro.formas[forma].importe"
+                                        class="FormPaInput Importe"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        :aria-label="`Importe ${forma}`"
+                                        :data-cy="`importe-${forma}`"
+                                    />
+                                </td>
+                            </template>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-        <div class="FormapaTotalesRow">
-            <div class="FormapaPagadosColumn">
-                <text>
-                    Total Pagado $
-                </text>
-                <div class="FormapaNumPag">
-                    0.00
+        <div class="FormPaResumen">
+            <div class="FormPaTotales">
+                <div class="FormPaTotal">
+                    <span>Total Pagado</span>
+                    <strong data-cy="total-pagado">{{ formatearMoneda(cobro.totalPagado) }}</strong>
+                </div>
+                <div class="FormPaTotal" :class="estadoDiferencia">
+                    <span>Diferencia</span>
+                    <strong data-cy="diferencia">{{ formatearMoneda(cobro.diferencia) }}</strong>
+                    <small v-if="avisoDiferencia" data-cy="diferencia-aviso">{{ avisoDiferencia }}</small>
                 </div>
             </div>
-            <div class="FormapaPagadosColumn">
-                <text>
-                    Diferencia $
-                </text>
-                <div class="FormapaNumPag">
-                    0
-                </div>
-            </div>
-        </div>
-        <div class="FormapaObsRow">
-            <text>
-                Observaciones:
-            </text>
-            <div class="Formapaobstext">
-
+            <div class="FormPaObs">
+                <label for="cobro-observaciones">Observaciones:</label>
+                <textarea
+                    id="cobro-observaciones"
+                    v-model="cobro.observaciones"
+                    maxlength="500"
+                    data-cy="observaciones"
+                ></textarea>
             </div>
         </div>
     </div>
 </template>
 
-<style>
+<script setup>
+import { computed } from 'vue'
+import { useCobroStore, FORMAS_PAGO, EFECTIVO, CREDITO } from '../../../stores/cobro'
+import { formatearMoneda } from '../../../utils/formato'
 
-</style>
+const cobro = useCobroStore()
+
+const estadoDiferencia = computed(() => {
+    if (cobro.diferencia < 0 || cobro.cambioInvalido) return 'negativa'
+    return cobro.diferencia > 0 ? 'positiva' : ''
+})
+
+const avisoDiferencia = computed(() => {
+    if (cobro.totalGlobal <= 0) return ''
+    if (cobro.diferencia < 0) return 'Falta por cubrir'
+    if (cobro.cambioInvalido) return 'El cambio solo puede darse en efectivo'
+    return cobro.diferencia > 0 ? 'Cambio a entregar' : ''
+})
+</script>

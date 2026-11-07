@@ -138,30 +138,46 @@
             { categoria: 'tipos_cliente', etiqueta: 'Por Tipo de Cliente' },
         ]"
     />
+    <PromListaDoble
+        v-if="porTipo"
+        titulo="Tipos de Cliente"
+        :opciones="tiposCliente"
+        :model-value="promo.condiciones.tipos_cliente"
+        texto-vacio="Sin selección: aplica a todos los tipos de cliente"
+        :cargando="cargandoTipos"
+        :error="errorTipos"
+        cy="tipocli"
+        @agregar="$event.forEach(o => promo.agregarCondicion('tipos_cliente', o))"
+        @quitar="promo.quitarCondiciones('tipos_cliente', $event)"
+    />
     <PromBuscadorLista
-        :key="categoria"
-        :etiqueta="porTipo ? 'Tipo de Cliente' : 'Cliente'"
-        :placeholder="porTipo ? 'Buscar tipo de cliente' : 'Buscar cliente por nombre o apellido'"
-        :ayuda-vacio="porTipo ? 'Sin tipos de cliente: aplica a todos los clientes' : 'Sin clientes: aplica a todos los clientes'"
-        :buscar="porTipo ? buscarTipoCliente : buscarCliente"
-        :model-value="promo.condiciones[categoria]"
-        @agregar="promo.agregarCondicion(categoria, $event)"
-        @eliminar="promo.quitarCondiciones(categoria, $event)"
+        v-else
+        etiqueta="Cliente"
+        placeholder="Buscar cliente por nombre o apellido"
+        ayuda-vacio="Sin clientes: aplica a todos los clientes"
+        :buscar="buscarCliente"
+        :model-value="promo.condiciones.clientes"
+        @agregar="promo.agregarCondicion('clientes', $event)"
+        @eliminar="promo.quitarCondiciones('clientes', $event)"
     />
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import PromCriterio from './PromCriterio.vue'
 import PromBuscadorLista from './PromBuscadorLista.vue'
+import PromListaDoble from './PromListaDoble.vue'
 import { usePromocionStore } from '../../../stores/promocion'
 import { getTiposCliente } from '../../../services/TipoClienteServices'
 import { authHeaders } from '../../../services/authHeader'
 
 const promo = usePromocionStore()
 
-const categoria = computed(() => promo.criterios.cliente)
-const porTipo = computed(() => categoria.value === 'tipos_cliente')
+const porTipo = computed(() => promo.criterios.cliente === 'tipos_cliente')
+
+const tiposCliente = ref([])
+const cargandoTipos = ref(false)
+const errorTipos = ref(null)
 
 const buscarCliente = async (termino) => {
     const res = await fetch(
@@ -173,12 +189,18 @@ const buscarCliente = async (termino) => {
     return clientes.map(c => ({ id: c.id, etiqueta: `${c.nombres} ${c.apellidos}` }))
 }
 
-let tiposCache = null
-const buscarTipoCliente = async (termino) => {
-    if (!tiposCache) {
-        tiposCache = (await getTiposCliente()).map(t => ({ id: t.id, etiqueta: t.cliente }))
+const cargarTiposCliente = async () => {
+    if (tiposCliente.value.length || cargandoTipos.value) return
+    cargandoTipos.value = true
+    errorTipos.value = null
+    try {
+        tiposCliente.value = (await getTiposCliente()).map(t => ({ id: t.id, etiqueta: t.cliente }))
+    } catch (e) {
+        errorTipos.value = e.message
+    } finally {
+        cargandoTipos.value = false
     }
-    const t = termino.toLowerCase()
-    return tiposCache.filter(tc => tc.etiqueta.toLowerCase().includes(t))
 }
+
+watch(porTipo, (activo) => { if (activo) cargarTiposCliente() }, { immediate: true })
 </script>

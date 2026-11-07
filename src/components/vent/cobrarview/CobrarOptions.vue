@@ -108,13 +108,25 @@
 }
 
 .CobOpsTotalRow button {
-    padding: 7px 10px;
-    border-radius: 10px;
-    border: 1.5px solid #130348;
-    color: #130348;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 18px;
+    border-radius: 12px;
+    border: 1.5px solid white;
+    color: white;
     font-size: 1rem;
-    background-color: greenyellow;
+    font-weight: 600;
+    background: radial-gradient(ellipse at center, #58B358 10%, #459B45 100%);
     cursor: pointer;
+}
+
+.CobOpsTotalRow button:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.CobOpsTotalRow button .material-icons {
+    font-size: 20px;
 }
 
 .CobOpsTotalRow button:disabled {
@@ -141,20 +153,29 @@
             <EnEspera @clienteSeleccionado="emit('clienteSeleccionado', $event)" />
         </div>
 
-        <div class="CobOpsContenido" v-if="modelValue === 'Pago Inicial' && cliente">
-            <PagoInicial :cliente="cliente" />
+        <div class="CobOpsContenido" v-if="modelValue === 'Pago Inicial'">
+            <PagoInicial ref="pagoInicialRef" :cliente="cliente" @update:total="totalGlobal = $event" />
+        </div>
+
+        <div class="CobOpsContenido" v-if="modelValue === 'Pagos Parciales'">
+            <PagosParciales ref="parcialesRef" :cliente="cliente" @update:total="totalGlobal = $event" />
         </div>
 
         <div class="CobOpsContenido" v-if="modelValue === 'Cuentas Por Cobrar'">
             <CuentasPorCobrar ref="cuentasRef" :cliente="cliente" @update:total="totalGlobal = $event" />
         </div>
 
+        <div class="CobOpsContenido" v-if="modelValue === 'Liquidaciones'">
+            <Liquidaciones :cliente="cliente" />
+        </div>
+
         <div class="CobOpsTotalRow">
             <text>
                 Total Global
             </text>
-            <span>{{ formatearMoneda(totalGlobal) }}</span>
-            <button :disabled="!puedeAceptar" @click="aceptar">
+            <span data-cy="total-global">{{ formatearMoneda(totalGlobal) }}</span>
+            <button :disabled="!puedeAceptar" data-cy="cobrar-aceptar" @click="aceptar">
+                <span class="material-icons">check</span>
                 Aceptar
             </button>
         </div>
@@ -166,7 +187,10 @@ import { ref, computed, watch } from 'vue'
 import PagoInicial from './opcionescobrar/PagoInicial.vue'
 import EnEspera from './opcionescobrar/EnEspera.vue'
 import CuentasPorCobrar from './opcionescobrar/CuentasPorCobrar.vue'
+import PagosParciales from './opcionescobrar/PagosParciales.vue'
+import Liquidaciones from './opcionescobrar/Liquidaciones.vue'
 import { formatearMoneda } from '../../../utils/formato'
+import { useCobroStore } from '../../../stores/cobro'
 
 const props = defineProps({
     modelValue: {
@@ -196,19 +220,28 @@ const OpSelected = (op) => {
 }
 
 const cuentasRef = ref(null)
+const pagoInicialRef = ref(null)
+const parcialesRef = ref(null)
 const totalGlobal = ref(0)
+const cobro = useCobroStore()
 
-const puedeAceptar = computed(() =>
-    props.modelValue === 'Cuentas Por Cobrar' && totalGlobal.value > 0 && !cuentasRef.value?.procesando
-)
+// pestaña -> componente que cobra al presionar Aceptar
+const cobradores = { 'Pago Inicial': pagoInicialRef, 'Pagos Parciales': parcialesRef, 'Cuentas Por Cobrar': cuentasRef }
+
+const puedeAceptar = computed(() => {
+    const cobrador = cobradores[props.modelValue]?.value
+    return !!cobrador && cobro.cubreTotal && !cobrador.procesando
+})
+
+watch(totalGlobal, (total) => { cobro.totalGlobal = total }, { immediate: true })
 
 watch(() => props.modelValue, () => {
     totalGlobal.value = 0
+    cobro.credito = 0
+    cobro.limpiar()
 })
 
 const aceptar = async () => {
-    if (props.modelValue === 'Cuentas Por Cobrar') {
-        await cuentasRef.value?.aplicar()
-    }
+    await cobradores[props.modelValue]?.value?.aplicar()
 }
 </script>

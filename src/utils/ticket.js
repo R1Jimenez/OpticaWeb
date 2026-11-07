@@ -1,5 +1,5 @@
 // Ticket de venta (80mm). Lo usan la cotización al cobrar y la reimpresión de tickets.
-import { escapeHtml } from './formato'
+import { escapeHtml, parsearFechaUTC } from './formato'
 
 const dinero = (valor) => `$${Number(valor || 0).toFixed(2)}`
 
@@ -23,6 +23,37 @@ function formatearPromesa(valor) {
 // Se abre antes de cualquier await para que el navegador no la bloquee como popup
 export function abrirVentanaTicket() {
     return window.open('', '_blank')
+}
+
+// Convierte la respuesta de GET /cotizacion/ticket/{id} al formato de escribirTicket
+export function datosTicketVenta(t) {
+    return {
+        folio: t.folio,
+        sucursal: t.sucursal,
+        fecha: parsearFechaUTC(t.fecha),
+        vendedor: t.vendedor,
+        cliente: {
+            nombre: t.cliente_nombre,
+            direccion: t.cliente_direccion,
+            telefono: t.cliente_telefono,
+            tipo: t.tipo_cliente,
+        },
+        paciente: t.paciente,
+        items: t.items.map(i => ({
+            cantidad: i.cantidad,
+            nombre: i.nombre,
+            precioUnitario: i.precio_unitario,
+            descuentoPct: i.descuento_porcentaje,
+        })),
+        descuentoPct: Number(t.descuento_porcentaje),
+        promocion: t.promocion,
+        totalNormal: t.total_normal,
+        totalVenta: t.total_venta,
+        plazo: t.plazo,
+        pagoInicial: t.pago_inicial,
+        pagoRestante: t.pago_restante,
+        promesaEntrega: t.promesa_entrega,
+    }
 }
 
 /**

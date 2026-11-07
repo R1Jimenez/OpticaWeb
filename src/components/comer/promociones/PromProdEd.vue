@@ -138,15 +138,21 @@
             { categoria: 'atributos_valores', etiqueta: 'Por atributo de producto' },
         ]"
     />
+    <PromAtributos
+        v-if="porAtributo"
+        :model-value="promo.condiciones.atributos_valores"
+        @agregar="promo.agregarCondicion('atributos_valores', $event)"
+        @quitar="promo.quitarCondiciones('atributos_valores', $event)"
+    />
     <PromBuscadorLista
-        :key="categoria"
-        :etiqueta="porAtributo ? 'Atributo' : 'Producto'"
-        :placeholder="porAtributo ? 'Buscar atributo o valor (ej. Marca, RayBan)' : 'Buscar por código, nombre o código externo'"
-        :ayuda-vacio="porAtributo ? 'Sin atributos: aplica a todos los productos' : 'Sin productos: aplica a todos los productos'"
-        :buscar="porAtributo ? buscarAtributo : buscarProducto"
-        :model-value="promo.condiciones[categoria]"
-        @agregar="promo.agregarCondicion(categoria, $event)"
-        @eliminar="promo.quitarCondiciones(categoria, $event)"
+        v-else
+        etiqueta="Producto"
+        placeholder="Buscar por código, nombre o código externo"
+        ayuda-vacio="Sin productos: aplica a todos los productos"
+        :buscar="buscarProducto"
+        :model-value="promo.condiciones.productos"
+        @agregar="promo.agregarCondicion('productos', $event)"
+        @eliminar="promo.quitarCondiciones('productos', $event)"
     />
 </template>
 
@@ -154,30 +160,16 @@
 import { computed } from 'vue'
 import PromCriterio from './PromCriterio.vue'
 import PromBuscadorLista from './PromBuscadorLista.vue'
+import PromAtributos from './PromAtributos.vue'
 import { usePromocionStore } from '../../../stores/promocion'
 import { ProductosService } from '../../../services/ProductosServices'
-import { AtributosService } from '../../../services/AtributosService'
-import { AtributosValoresService } from '../../../services/AtributosValoresServices'
 
 const promo = usePromocionStore()
 
-const categoria = computed(() => promo.criterios.producto)
-const porAtributo = computed(() => categoria.value === 'atributos_valores')
+const porAtributo = computed(() => promo.criterios.producto === 'atributos_valores')
 
 const buscarProducto = async (termino) => {
     const productos = await ProductosService.buscar(termino)
     return productos.map(p => ({ id: p.id, etiqueta: `${p.codigo} - ${p.nombre} (${p.codigo_externo})` }))
-}
-
-// Catálogo pequeño: se descarga una vez y se filtra en el navegador
-let valoresCache = null
-const buscarAtributo = async (termino) => {
-    if (!valoresCache) {
-        const [atributos, valores] = await Promise.all([AtributosService.getAll(), AtributosValoresService.getAll()])
-        const nombreAtributo = Object.fromEntries(atributos.map(a => [a.id, a.atributo]))
-        valoresCache = valores.map(v => ({ id: v.id, etiqueta: `${nombreAtributo[v.atributo_id] ?? 'Atributo'}: ${v.descripcion}` }))
-    }
-    const t = termino.toLowerCase()
-    return valoresCache.filter(v => v.etiqueta.toLowerCase().includes(t)).slice(0, 30)
 }
 </script>

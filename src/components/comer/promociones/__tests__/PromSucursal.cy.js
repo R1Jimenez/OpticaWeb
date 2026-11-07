@@ -78,6 +78,8 @@ describe('Promociones - pestaña Sucursal', () => {
         cy.contains('[data-cy=suc-disponibles] .SucItem', 'Smart La Cuesta').click()
         cy.get('[data-cy=suc-agregar]').click()
 
+        // solo se llenó la pestaña Sucursal: aplica a todo
+        cy.get('[data-cy=promo-alcance]').should('contain', 'todos los tipos de venta · todos los productos · todos los clientes')
         cy.get('[data-cy=promo-guardar]').click()
         cy.wait('@crear').its('request.body').should('deep.equal', {
             nombre: 'Promo Lentes',

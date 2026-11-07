@@ -66,6 +66,36 @@
     color: #130348;
 }
 
+.OpBadge {
+    margin-left: 6px;
+    padding: 0 7px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.OpButton.active .OpBadge {
+    background: #130348;
+}
+
+.OpBadge.filtrado {
+    background: #FB1C2E;
+}
+
+.EstadoCol {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.Alcance {
+    font-size: 0.8rem;
+    color: #6C757D;
+}
+
 .FooterProm {
     display: flex;
     flex-direction: row;
@@ -152,6 +182,12 @@
                 @click="OpSelected(op)"
             >
                 <text>{{ op }}</text>
+                <span
+                    v-if="alcance[op]"
+                    class="OpBadge"
+                    :class="{ filtrado: alcance[op].total }"
+                    :data-cy="`badge-${op}`"
+                >{{ alcance[op].total || 'Todos' }}</span>
             </div>
         </div>
 
@@ -161,7 +197,12 @@
         <PromCliEd v-else-if="selectedOp === 'Cliente'" />
 
         <div class="FooterProm">
-            <span class="EstadoProm">{{ promo.id ? `Editando promoción #${promo.id}` : 'Nueva promoción' }}</span>
+            <div class="EstadoCol">
+                <span class="EstadoProm">{{ promo.id ? `Editando promoción #${promo.id}` : 'Nueva promoción' }}</span>
+                <span class="Alcance" data-cy="promo-alcance">
+                    Aplica a: {{ Object.values(alcance).map(a => a.texto).join(' · ') }}
+                </span>
+            </div>
             <span v-if="aviso" class="Avisos" :class="aviso.tipo" data-cy="promo-aviso">{{ aviso.texto }}</span>
             <div class="BtnGroup">
                 <button class="BtnProm secundario" :disabled="guardando" data-cy="promo-nueva" @click="nueva">
@@ -176,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import PromSucEdits from './PromSucEdits.vue'
 import PromTipVen from './PromTipVen.vue'
 import PromProdEd from './PromProdEd.vue'
@@ -186,6 +227,19 @@ import { usePromocionStore } from '../../../stores/promocion'
 const promo = usePromocionStore()
 const guardando = ref(false)
 const aviso = ref(null)
+
+// Pestañas sin captura = la promoción aplica a todos
+const resumen = (categorias, todos) => {
+    const [categoria, nombre] = categorias.find(([c]) => promo.condiciones[c].length) ?? []
+    const total = categoria ? promo.condiciones[categoria].length : 0
+    return { total, texto: total ? `${total} ${nombre}` : todos }
+}
+
+const alcance = computed(() => ({
+    'Tipo de Venta': resumen([['tipos_venta', 'tipo(s) de venta'], ['plazos', 'plazo(s)']], 'todos los tipos de venta'),
+    'Producto': resumen([['productos', 'producto(s)'], ['atributos_valores', 'atributo(s) de producto']], 'todos los productos'),
+    'Cliente': resumen([['clientes', 'cliente(s)'], ['tipos_cliente', 'tipo(s) de cliente']], 'todos los clientes'),
+}))
 
 const nueva = () => {
     promo.resetear()

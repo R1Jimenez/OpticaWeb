@@ -50,7 +50,8 @@
     color: #130348;
 }
 
-.dataclient-field input {
+.dataclient-field input,
+.dataclient-field select {
     padding: 7px 10px;
     border: 1px solid #BCBCBC;
     border-radius: 4px;
@@ -61,12 +62,14 @@
     outline: none;
 }
 
-.dataclient-field input:focus {
+.dataclient-field input:focus,
+.dataclient-field select:focus {
     border-color: #130348;
     border-width: 2px;
 }
 
-.dataclient-field input.blocked {
+.dataclient-field input.blocked,
+.dataclient-field select.blocked {
     background-color: #E0E0E0;
     color: #555;
 }
@@ -227,7 +230,7 @@
                 </div>
             </div>
 
-            <!-- Fila 4: Estado, Código Postal, Botones -->
+            <!-- Fila 4: Estado, Código Postal, Tipo de Cliente, Botones -->
             <div class="dataclient-row">
                 <div class="dataclient-field">
                     <label>Estado</label>
@@ -236,6 +239,21 @@
                 <div class="dataclient-field">
                     <label>Código Postal</label>
                     <input v-model="form.codigopostal" :disabled="hasClient && !isEditing" :class="{ blocked: hasClient && !isEditing }" />
+                </div>
+                <div class="dataclient-field">
+                    <label for="dataclient-tipo">Tipo de Cliente</label>
+                    <select
+                        id="dataclient-tipo"
+                        v-model="tipoClienteId"
+                        :disabled="hasClient && !isEditing"
+                        :class="{ blocked: hasClient && !isEditing }"
+                        data-cy="cliente-tipo"
+                    >
+                        <option :value="null" disabled>{{ tiposCliente.length ? 'Seleccione un tipo' : 'Sin tipos de cliente' }}</option>
+                        <option v-for="t in tiposCliente" :key="t.id" :value="t.id">
+                            {{ t.cliente }} ({{ t.porcentaje_descuento }}%)
+                        </option>
+                    </select>
                 </div>
 
                 <!-- Botones -->
@@ -309,8 +327,9 @@
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
 import { authHeaders } from '../../services/authHeader'
+import { getTiposCliente } from '../../services/TipoClienteServices'
 
 const props = defineProps({
     cliente: { type: Object, default: null }
@@ -330,6 +349,22 @@ const form = reactive({
     colonia: '', ciudad: '', estado: '', codigopostal: ''
 })
 
+const tiposCliente = ref([])
+const tipoClienteId = ref(null)
+
+// tipo 1 era el que se asignaba siempre; se conserva como predeterminado para clientes nuevos
+const tipoPredeterminado = () =>
+    (tiposCliente.value.find(t => t.id === 1) ?? tiposCliente.value[0])?.id ?? null
+
+const cargarTiposCliente = async () => {
+    try {
+        tiposCliente.value = await getTiposCliente()
+        if (!hasClient.value && tipoClienteId.value === null) tipoClienteId.value = tipoPredeterminado()
+    } catch (e) {
+        showToast(`Error: ${e.message}`, true)
+    }
+}
+
 const cargarCliente = (cliente) => {
     form.nombres      = cliente.nombres      || ''
     form.apellidos    = cliente.apellidos    || ''
@@ -343,12 +378,14 @@ const cargarCliente = (cliente) => {
     form.ciudad       = cliente.ciudad       || ''
     form.estado       = cliente.estado       || ''
     form.codigopostal = cliente.codigopostal || ''
+    tipoClienteId.value = cliente.tipocliente ?? null
     hasClient.value   = true
     isEditing.value   = false
 }
 
 const limpiarCampos = () => {
     Object.keys(form).forEach(k => form[k] = '')
+    tipoClienteId.value = tipoPredeterminado()
     hasClient.value = false
     isEditing.value = false
 }
@@ -365,12 +402,16 @@ const handleAgregar = async () => {
         showToast('Por favor complete al menos Nombres y Apellidos', true)
         return
     }
+    if (!tipoClienteId.value) {
+        showToast('Seleccione el tipo de cliente', true)
+        return
+    }
     isLoading.value = true
     try {
         const response = await fetch('http://127.0.0.1:8000/cliente/create', {
             method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ ...form, tipocliente: 1 })
+            body: JSON.stringify({ ...form, tipocliente: tipoClienteId.value })
         })
         if (!response.ok) {
             const err = await response.json()
@@ -393,12 +434,16 @@ const handleModificar = async () => {
         showToast('Por favor complete al menos Nombres y Apellidos', true)
         return
     }
+    if (!tipoClienteId.value) {
+        showToast('Seleccione el tipo de cliente', true)
+        return
+    }
     isLoading.value = true
     try {
         const response = await fetch(`http://127.0.0.1:8000/cliente/update/${props.cliente.id}`, {
             method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ ...form, tipocliente: props.cliente.tipocliente ?? 1 })
+            body: JSON.stringify({ ...form, tipocliente: tipoClienteId.value })
         })
         if (!response.ok) {
             const err = await response.json()
@@ -465,4 +510,6 @@ watch(() => props.cliente, (nuevoCliente) => {
         limpiarCampos()
     }
 }, { immediate: true })
+
+onMounted(cargarTiposCliente)
 </script>

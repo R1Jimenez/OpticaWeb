@@ -80,6 +80,32 @@
     transition: all 0.2s;
 }
 
+.entryvals.con-toggle {
+    padding-right: 2.8rem;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    padding: 2px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #130348;
+    cursor: pointer;
+}
+
+.toggle-password:hover {
+    background-color: rgba(19, 3, 72, 0.08);
+}
+
+.toggle-password .material-icons {
+    font-size: 1.4rem;
+}
+
 .row {
     display: flex;
     flex-direction: row;
@@ -149,12 +175,24 @@
             <div class = "inputwrapper">
                 <span class="material-icons input-icon">lock</span>
                 <input 
-                  type="password"
+                  :type="mostrarPassword ? 'text' : 'password'"
                   placeholder="Contraseña"
-                  class="entryvals"
+                  class="entryvals con-toggle"
+                  autocomplete="current-password"
                   v-model="form.password"
                   @keyup.enter="handleLogin"
                 />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  :title="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  :aria-label="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  :aria-pressed="mostrarPassword"
+                  data-cy="toggle-password"
+                  @click="mostrarPassword = !mostrarPassword"
+                >
+                    <span class="material-icons">{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
             </div>
         </div>
         <div class="row">
@@ -180,6 +218,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const form = ref({ usuario: '', password: '' })
+const mostrarPassword = ref(false)
 const isLoading = ref(false)
 const loginError = ref(null)
 

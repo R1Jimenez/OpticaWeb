@@ -19,33 +19,42 @@ describe('Promociones - pestañas Tipo de Venta, Producto y Cliente', () => {
         cy.viewport(1400, 900)
         cy.intercept('GET', `${API}/sucursales/all`, [{ id: 1, sucursal: 'Almacen Central' }]).as('sucursales')
         cy.intercept('GET', `${API}/tipo_venta/all`, [{ id: 1, venta: 'Contado' }, { id: 2, venta: 'Credito' }])
-        cy.intercept('GET', `${API}/plazos/all`, [{ id: 7, plazo: '4 semanas', tipo_venta_id: 2 }])
+        cy.intercept('GET', `${API}/plazos/all`, [{ id: 7, plazo: '4 semanas', tipo_venta_id: 2 }, { id: 8, plazo: '8 semanas', tipo_venta_id: 2 }])
         cy.intercept('GET', `${API}/productos/buscar*`, [{ id: 36, codigo: '0100030000200001001', nombre: 'ARMAZON PRUEBA', codigo_externo: 'codigo1' }]).as('buscarProducto')
-        cy.intercept('GET', `${API}/atributos/all`, [{ id: 1, atributo: 'Marca', longitud: 2 }])
-        cy.intercept('GET', `${API}/atributosvalores/all`, [{ id: 10, atributo_id: 1, clave: '01', descripcion: 'RayBan' }, { id: 11, atributo_id: 1, clave: '02', descripcion: 'Oakley' }])
+        cy.intercept('GET', `${API}/atributos/all`, [{ id: 1, atributo: 'Marca', longitud: 2 }, { id: 2, atributo: 'Color', longitud: 2 }])
+        cy.intercept('GET', `${API}/atributosvalores/all`, [
+            { id: 10, atributo_id: 1, clave: '01', descripcion: 'RayBan' },
+            { id: 11, atributo_id: 1, clave: '02', descripcion: 'Oakley' },
+            { id: 20, atributo_id: 2, clave: '01', descripcion: 'Negro' },
+        ])
         cy.intercept('GET', `${API}/cliente/search*`, [{ id: 4, nombres: 'Antonio', apellidos: 'Doe' }]).as('buscarCliente')
-        cy.intercept('GET', `${API}/tipo_cliente/all`, [{ id: 3, cliente: 'Frecuente', porcentaje_descuento: 10 }])
+        cy.intercept('GET', `${API}/tipo_cliente/all`, [{ id: 3, cliente: 'Frecuente', porcentaje_descuento: 10 }, { id: 5, cliente: 'Mayoreo', porcentaje_descuento: 15 }])
     })
 
-    it('Tipo de Venta: agrega tipos y al cambiar a Por Plazo descarta la selección previa', () => {
+    it('Tipo de Venta: sin selección aplica a todos; Por Plazo muestra los plazos y descarta los tipos', () => {
         const promo = montar()
         pestana('Tipo de Venta')
+        cy.get('[data-cy=badge-Tipo\\ de\\ Venta]').should('have.text', 'Todos')
+        cy.get('[data-cy=criterio-tipos_venta]').should('be.checked')
+        cy.get('[data-cy=venta-aplica]').should('contain', 'aplica a todos los tipos de venta')
         cy.contains('[data-cy=venta-disponibles] .ListaItem', 'Credito').dblclick()
         cy.get('[data-cy=venta-aplica] .ListaItem').should('have.length', 1).and('contain', 'Credito')
+        cy.get('[data-cy=badge-Tipo\\ de\\ Venta]').should('have.text', '1')
 
         cy.on('window:confirm', () => true)
         cy.get('[data-cy=criterio-plazos]').click()
         cy.get('[data-cy=criterio-plazos]').should('be.checked')
+        cy.get('[data-cy=venta-disponibles] .ListaItem').should('have.length', 2).first().should('have.text', '4 semanas (Credito)')
         cy.get('[data-cy=venta-aplica]').should('contain', 'aplica a todos los plazos')
-        cy.contains('[data-cy=venta-disponibles] .ListaItem', '4 semanas (Credito)').click()
-        cy.get('[data-cy=venta-agregar]').click()
+        cy.contains('button', 'Agregar Todos').click()
+        cy.get('[data-cy=promo-alcance]').should('contain', '2 plazo(s)')
         cy.then(() => {
             expect(promo.condiciones.tipos_venta).to.deep.equal([])
-            expect(promo.condiciones.plazos.map(p => p.id)).to.deep.equal([7])
+            expect(promo.condiciones.plazos.map(p => p.id)).to.deep.equal([7, 8])
         })
     })
 
-    it('Producto: busca, agrega y elimina; por atributo filtra el catálogo de valores', () => {
+    it('Producto: busca, agrega y elimina; por atributo se eligen valores en el dropdown de cada atributo', () => {
         const promo = montar()
         pestana('Producto')
         cy.get('[data-cy=buscador-input]').type('codigo1')
@@ -59,11 +68,38 @@ describe('Promociones - pestañas Tipo de Venta, Producto y Cliente', () => {
         cy.get('[data-cy=buscador-lista]').should('contain', 'aplica a todos los productos')
 
         cy.get('[data-cy=criterio-atributos_valores]').click()
-        cy.get('[data-cy=buscador-input]').type('ray')
-        cy.get('[data-cy=buscador-resultados] .BusItem').should('have.length', 1).and('contain', 'Marca: RayBan')
-        cy.get('[data-cy=buscador-resultados] .BusItem').click()
-        cy.get('[data-cy=buscador-agregar]').click()
+        cy.get('[data-cy=atributo-1]').should('contain', 'Todos').click()
+        cy.get('[data-cy=atributo-1-valores] .DropItem').should('have.length', 2).first().should('contain', 'Oakley')
+        cy.contains('[data-cy=atributo-1-valores] .DropItem', 'RayBan').click()
+        cy.contains('[data-cy=atributo-1-valores] .DropItem', 'Oakley').click()
+        cy.get('[data-cy=atributo-1]').should('contain', 'Oakley, RayBan').find('.Conteo').should('have.text', '2')
+        cy.get('[data-cy=atributo-1]').click()
+        cy.get('[data-cy=atributo-1-valores]').should('not.exist')
+        cy.get('[data-cy=atributo-2]').click()
+        cy.contains('[data-cy=atributo-2-valores] .DropItem', 'Negro').click()
+        cy.get('[data-cy=atributos-aplica] .AplicaItem').should('have.length', 3).first().should('have.text', 'Marca: RayBan')
+
+        // desmarcar en el dropdown lo quita de la lista
+        cy.contains('[data-cy=atributo-2-valores] .DropItem', 'Negro').click()
+        cy.get('[data-cy=badge-Producto]').should('have.text', '2')
+        cy.then(() => expect(promo.condiciones.atributos_valores.map(v => v.id)).to.deep.equal([10, 11]))
+
+        cy.contains('[data-cy=atributos-aplica] .AplicaItem', 'Marca: Oakley').dblclick()
         cy.then(() => expect(promo.condiciones.atributos_valores).to.deep.equal([{ id: 10, etiqueta: 'Marca: RayBan' }]))
+    })
+
+    it('Cliente: Por Tipo de Cliente muestra todos los tipos de la app para elegir', () => {
+        const promo = montar()
+        pestana('Cliente')
+        cy.get('[data-cy=criterio-tipos_cliente]').click()
+        cy.get('[data-cy=tipocli-disponibles] .ListaItem').should('have.length', 2)
+        cy.get('[data-cy=tipocli-aplica]').should('contain', 'aplica a todos los tipos de cliente')
+        cy.contains('[data-cy=tipocli-disponibles] .ListaItem', 'Mayoreo').click()
+        cy.get('[data-cy=tipocli-agregar]').click()
+        cy.get('[data-cy=tipocli-aplica] .ListaItem').should('have.length', 1).and('contain', 'Mayoreo')
+        cy.get('[data-cy=tipocli-disponibles] .ListaItem').should('have.length', 1)
+        cy.get('[data-cy=promo-alcance]').should('contain', '1 tipo(s) de cliente')
+        cy.then(() => expect(promo.condiciones.tipos_cliente.map(t => t.id)).to.deep.equal([5]))
     })
 
     it('Cliente: cancelar el cambio de criterio conserva lo capturado', () => {

@@ -199,7 +199,7 @@ import { ref, watch } from 'vue'
 import Paginacion from '../../Paginacion.vue'
 import { getTickets, getTicket } from '../../../services/CotizacionServices'
 import { parsearFechaUTC, formatearMoneda } from '../../../utils/formato'
-import { abrirVentanaTicket, escribirTicket } from '../../../utils/ticket'
+import { abrirVentanaTicket, escribirTicket, datosTicketVenta } from '../../../utils/ticket'
 
 const POR_PAGINA = 10
 
@@ -250,33 +250,7 @@ const reimprimir = async (folio) => {
     imprimiendo.value = folio
     try {
         const t = await getTicket(folio)
-        escribirTicket(ventana, {
-            folio: t.folio,
-            sucursal: t.sucursal,
-            fecha: parsearFechaUTC(t.fecha),
-            vendedor: t.vendedor,
-            cliente: {
-                nombre: t.cliente_nombre,
-                direccion: t.cliente_direccion,
-                telefono: t.cliente_telefono,
-                tipo: t.tipo_cliente,
-            },
-            paciente: t.paciente,
-            items: t.items.map(i => ({
-                cantidad: i.cantidad,
-                nombre: i.nombre,
-                precioUnitario: i.precio_unitario,
-                descuentoPct: i.descuento_porcentaje,
-            })),
-            descuentoPct: Number(t.descuento_porcentaje),
-            promocion: t.promocion,
-            totalNormal: t.total_normal,
-            totalVenta: t.total_venta,
-            plazo: t.plazo,
-            pagoInicial: t.pago_inicial,
-            pagoRestante: t.pago_restante,
-            promesaEntrega: t.promesa_entrega,
-        })
+        escribirTicket(ventana, datosTicketVenta(t))
     } catch (error) {
         ventana?.close()
         errorImpresion.value = `No se pudo reimprimir el ticket ${folio}: ${error.message}`
